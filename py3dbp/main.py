@@ -6,11 +6,12 @@ START_POSITION = [0, 0, 0]
 
 
 class Item:
-    def __init__(self, name, width, height, depth):
+    def __init__(self, name, width, height, depth, weight):
         self.name = name
         self.width = width
         self.height = height
         self.depth = depth
+        self.weight = weight
         self.rotation_type = 0
         self.position = START_POSITION
         self.number_of_decimals = DEFAULT_NUMBER_OF_DECIMALS

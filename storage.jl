@@ -3,8 +3,6 @@ using StaticArrays: SVector
 using Dates
 using PyCall
 
-#Python code
-#from py3dbp import Packer, Bin, Item
 Packer = pyimport("py3dbp").Packer
 Bin = pyimport("py3dbp").Bin
 Item = pyimport("py3dbp").Item
@@ -19,15 +17,15 @@ packer.add_bin(Bin("medium-2-box", 13.625, 11.875, 3.375, 70.0))
 packer.add_bin(Bin("large-box", 12.0, 12.0, 5.5, 70.0))
 packer.add_bin(Bin("large-2-box", 23.6875, 11.75, 3.0, 70.0))
 
-packer.add_item(Item("50g [powder 1]", 3.9370, 1.9685, 1.9685))
-packer.add_item(Item("50g [powder 2]", 3.9370, 1.9685, 1.9685))
-packer.add_item(Item("50g [powder 3]", 3.9370, 1.9685, 1.9685))
-packer.add_item(Item("250g [powder 4]", 7.8740, 3.9370, 1.9685))
-packer.add_item(Item("250g [powder 5]", 7.8740, 3.9370, 1.9685))
-packer.add_item(Item("250g [powder 6]", 7.8740, 3.9370, 1.9685))
-packer.add_item(Item("250g [powder 7]", 7.8740, 3.9370, 1.9685))
-packer.add_item(Item("250g [powder 8]", 7.8740, 3.9370, 1.9685))
-packer.add_item(Item("250g [powder 9]", 7.8740, 3.9370, 1.9685))
+packer.add_item(Item("50g [powder 1]", 3.9370, 1.9685, 1.9685, 1))
+packer.add_item(Item("50g [powder 2]", 3.9370, 1.9685, 1.9685, 2))
+packer.add_item(Item("50g [powder 3]", 3.9370, 1.9685, 1.9685, 3))
+packer.add_item(Item("250g [powder 4]", 7.8740, 3.9370, 1.9685, 4))
+packer.add_item(Item("250g [powder 5]", 7.8740, 3.9370, 1.9685, 5))
+packer.add_item(Item("250g [powder 6]", 7.8740, 3.9370, 1.9685, 6))
+packer.add_item(Item("250g [powder 7]", 7.8740, 3.9370, 1.9685, 7))
+packer.add_item(Item("250g [powder 8]", 7.8740, 3.9370, 1.9685, 8))
+packer.add_item(Item("250g [powder 9]", 7.8740, 3.9370, 1.9685, 9))
 
 packer.pack()
 
