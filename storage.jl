@@ -11,23 +11,17 @@ Item = pyimport("py3dbp").Item
 
 packer = Packer()
 
-packer.add_bin(Bin("small-envelope", 11.5, 6.125, 0.25, 10))
-packer.add_bin(Bin("large-envelope", 15.0, 12.0, 0.75, 15))
-packer.add_bin(Bin("small-box", 8.625, 5.375, 1.625, 70.0))
-packer.add_bin(Bin("medium-box", 11.0, 8.5, 5.5, 70.0))
-packer.add_bin(Bin("medium-2-box", 13.625, 11.875, 3.375, 70.0))
-packer.add_bin(Bin("large-box", 12.0, 12.0, 5.5, 70.0))
-packer.add_bin(Bin("large-2-box", 23.6875, 11.75, 3.0, 70.0))
+packer.add_bin(Bin("large-2-box", 10.6875, 5.75, 10.0, 70.0))
 
-packer.add_item(Item("50g [powder 1]", 3.9370, 1.9685, 1.9685))
-packer.add_item(Item("50g [powder 2]", 3.9370, 1.9685, 1.9685))
-packer.add_item(Item("50g [powder 3]", 3.9370, 1.9685, 1.9685))
-packer.add_item(Item("250g [powder 4]", 7.8740, 3.9370, 1.9685))
-packer.add_item(Item("250g [powder 5]", 7.8740, 3.9370, 1.9685))
-packer.add_item(Item("250g [powder 6]", 7.8740, 3.9370, 1.9685))
-packer.add_item(Item("250g [powder 7]", 7.8740, 3.9370, 1.9685))
-packer.add_item(Item("250g [powder 8]", 7.8740, 3.9370, 1.9685))
-packer.add_item(Item("250g [powder 9]", 7.8740, 3.9370, 1.9685))
+packer.add_item(Item("50g [powder 1]", 3.9370, 1.9685, 1.9685, 1.0))
+packer.add_item(Item("50g [powder 2]", 3.9370, 1.9685, 1.9685, 1.0))
+packer.add_item(Item("50g [powder 3]", 3.9370, 1.9685, 1.9685, 1.0))
+packer.add_item(Item("250g [powder 4]", 7.8740, 3.9370, 1.9685, 1.0))
+packer.add_item(Item("250g [powder 5]", 7.8740, 3.9370, 1.9685, 1.0))
+packer.add_item(Item("250g [powder 6]", 7.8740, 3.9370, 1.9685, 1.0))
+packer.add_item(Item("250g [powder 7]", 7.8740, 3.9370, 1.9685, 1.0))
+packer.add_item(Item("250g [powder 8]", 7.8740, 3.9370, 1.9685, 1.0))
+packer.add_item(Item("250g [powder 9]", 7.8740, 3.9370, 1.9685, 1.0))
 
 packer.pack()
 
@@ -48,6 +42,19 @@ for b in packer[:bins]
     println("***************************************************")
 end
 
+assigned_boxes = Dict{String, String}()
+assigned_boxes = Dict{String, String}()
+for b in packer[:bins]
+    # Assign fitted items
+    for item in b[:items]
+        assigned_boxes[item[:name]] = b[:name]
+    end
+    # Assign unfitted items with a special label (e.g., "Unfitted")
+    for item in b[:unfitted_items]
+        assigned_boxes[item[:name]] = b[:name]
+    end
+end
+
 # Definición de Enums
 @enum BoxStatus waiting taken delivered
 @enum RobotStatus empty full
@@ -59,10 +66,14 @@ orient_left = 1
 orient_down = 2
 orient_right = 3
 
-# Definición de Estructuras de Agentes
 @agent struct box(GridAgent{2})
+    name::String
     status::BoxStatus = waiting
+    container::String  # Original container field
+    assigned_storage::String  # Storage name to which the box should be delivered
+    depends_on::Vector{String} = []  # Dependencias (cajas que deben entregarse primero)
 end
+
 
 @agent struct robot(GridAgent{2}) 
     capacity::RobotStatus = empty
@@ -80,16 +91,17 @@ end
 end
 
 @agent struct storage(GridAgent{2})
-    boxes::Int = 5
+    name::String
+    boxes::Vector{box} = []
 end
 
-# Función para encontrar la caja más cercana usando distancia Manhattan
+# Buscar la caja más cercana elegible
 function closest_box_nearby(agent::robot, model)
     closest_box = nothing
     min_distance = Inf
 
     for neighbor in allagents(model)
-        if isa(neighbor, box) && neighbor.status == waiting
+        if isa(neighbor, box) && neighbor.status == waiting && does_box_fit(neighbor.name, neighbor.assigned_storage, packer)
             dist_to_neighbor = abs(neighbor.pos[1] - agent.pos[1]) + abs(neighbor.pos[2] - agent.pos[2])
             if dist_to_neighbor < min_distance
                 min_distance = dist_to_neighbor
@@ -99,6 +111,21 @@ function closest_box_nearby(agent::robot, model)
     end
     return closest_box, min_distance
 end
+
+# Verificar si una caja es apta
+function does_box_fit(box_name::String, storage_name::String, packer)
+    for bin in packer[:bins]
+        if bin[:name] == storage_name
+            for fitted_item in bin[:items]
+                if fitted_item[:name] == box_name
+                    return true
+                end
+            end
+        end
+    end
+    return false
+end
+
 
 # Función para encontrar el almacenamiento más cercano usando distancia Manhattan
 function closest_storage_nearby(agent::robot, model)
@@ -191,54 +218,54 @@ function try_move!(agent::robot, model, dx::Int, dy::Int, griddims)
     end
 end
 
-
-function agent_step!(agent::robot, model, griddims)
-    # Decrementa el contador de espera del agente en caso de rotación
-    if agent.counter > 0
-        sleep(0.003) 
-        agent.counter -= 1
-        return
-    end
-
-    # Verifica si el coche está vacío y necesita encontrar una caja
-    if agent.capacity === empty
-        if any_box_nearby(agent, model, griddims)
-            closest_box, _ = closest_box_nearby(agent, model)
-            if closest_box !== nothing
-                move_towards!(agent, closest_box.pos, model, griddims)
-                if agent.pos === closest_box.pos
-                    closest_box.status = taken
-                    agent.capacity = full
-                    agent.carried_box = closest_box
+# Determina las dependencias físicas (cajas encima)
+function calculate_dependencies!(model)
+    for b in allagents(model)
+        if isa(b, box)
+            for other in allagents(model)
+                if isa(other, box) && b !== other
+                    # Considera como "encima" si están en la misma posición X/Y y el otro tiene menor profundidad
+                    if b.pos[1] == other.pos[1] && b.pos[2] == other.pos[2] && b.depth < other.depth
+                        push!(b.depends_on, other.name)
+                    end
                 end
             end
-        else
-            # Si no se encuentran cajas cercanas y el coche ha alcanzado el límite superior de la cuadrícula, se detiene
-            if agent.pos[2] == 1
-                agent.stopped = stop
-                return
-            end
+        end
+    end
+end
 
-            # Si no está en el límite superior, primero se mueve hacia initial_x
-            if agent.pos[1] != agent.initial_x
-                move_towards!(agent, (agent.initial_x, agent.pos[2]), model, griddims)
-            else
-                # Luego, avanza en y
-                target_y = agent.pos[2] - 1
-                move_towards!(agent, (agent.initial_x, target_y), model, griddims)
+# Función para verificar si una caja está lista para ser recolectada
+function is_ready_to_collect(agent::box, model)
+    return isempty(agent.depends_on) || all(dep -> find_agent_by_name(dep, model).status == delivered, agent.depends_on) || all(dep -> find_agent_by_name(dep, model).status == taken, agent.depends_on)
+end
+
+# Modificar la lógica del paso del robot para que las cajas sigan a los RobotStatus
+function agent_step!(agent::robot, model, griddims)
+    # Si el robot está vacío, busca una caja elegible para recoger
+    if agent.capacity == empty
+        closest_box, _ = closest_box_nearby(agent, model)
+
+        if closest_box !== nothing
+            # Dirígete hacia la caja
+            move_towards!(agent, closest_box.pos, model, griddims)
+            if agent.pos === closest_box.pos
+                closest_box.status = taken
+                agent.capacity = full
+                agent.carried_box = closest_box
             end
+        else
+            return
         end
     elseif agent.capacity == full
+        # Actualiza la posición de la caja que transporta
         if agent.carried_box !== nothing
-            move_agent!(agent.carried_box, agent.pos, model)
+            agent.carried_box.pos = agent.pos  # La caja sigue al robot
         end
 
-        # Encuentra el almacenamiento más cercano e intenta hacer la entrega
+        # Lógica para entregar la caja en el almacenamiento más cercano
         closest_storage, _ = closest_storage_nearby(agent, model)
         if closest_storage !== nothing
             move_towards!(agent, closest_storage.pos, model, griddims)
-
-            # Intenta la entrega si el coche está adyacente al almacenamiento
             if is_adjacent(agent.pos, closest_storage.pos)
                 deliver_box_in_front!(agent, model, closest_storage)
                 return_to_initial_x!(agent, model, griddims)
@@ -246,6 +273,20 @@ function agent_step!(agent::robot, model, griddims)
         end
     end
 end
+
+
+# Función para que el robot entregue la caja en el almacenamiento
+function deliver_box_in_front!(Robot::robot, model, Storage::storage)
+    if Robot.carried_box !== nothing
+        delivered_box = Robot.carried_box
+        push!(Storage.boxes, delivered_box)  # Añadir la caja al almacenamiento
+        delivered_box.status = delivered    # Marcar la caja como entregada
+        delivered_box.pos = Storage.pos     # Actualizar la posición de la caja al almacenamiento
+        Robot.carried_box = nothing         # El robot deja de transportar la caja
+        Robot.capacity = empty              # Marcar al robot como vacío
+    end
+end
+
 
 # Función auxiliar para verificar si dos posiciones son adyacentes (sin diagonal)
 function is_adjacent(pos1, pos2)
@@ -270,33 +311,16 @@ function return_to_initial_x!(agent::robot, model, griddims)
     end
 end
 
-# Función para entregar la caja frente al almacenamiento
 function deliver_box_in_front!(Robot::robot, model, Storage::storage)
-    storage_pos = Storage.pos
-    robot_pos = Robot.pos
-
-    # Determina la posición de entrega de la caja según la posición relativa del coche
-    box_delivery_pos = if robot_pos[1] == storage_pos[1] && robot_pos[2] == storage_pos[2] - 1
-        (storage_pos[1], storage_pos[2] - 1)
-    elseif robot_pos[1] == storage_pos[1] && robot_pos[2] == storage_pos[2] - 1
-        (storage_pos[1], storage_pos[2] - 1)
-    elseif robot_pos[1] == storage_pos[1] - 1 && robot_pos[2] == storage_pos[2]
-        (storage_pos[1] - 1, storage_pos[2])
-    elseif robot_pos[1] == storage_pos[1] - 1 && robot_pos[2] == storage_pos[2]
-        (storage_pos[1] - 1, storage_pos[2])
-    else
-        return
-    end
-
-    # Verifica si la posición de entrega está disponible
-    if !detect_collision(Robot, box_delivery_pos, model)
-        move_agent!(Robot.carried_box, box_delivery_pos, model)
-        Robot.carried_box.status = delivered
-        Robot.capacity = empty
-        Robot.carried_box = nothing
-        Storage.boxes -= 1
+    if Robot.carried_box !== nothing
+        delivered_box = Robot.carried_box
+        push!(Storage.boxes, delivered_box)  # Add the box to the storage
+        delivered_box.status = delivered  # Mark the box as delivered
+        Robot.carried_box = nothing  # Clear the robot's carried box
+        Robot.capacity = empty  # Set robot capacity to empty
     end
 end
+
 
 # Mover hacia una posición objetivo sin entrar en la última fila
 function move_towards!(agent::robot, target_pos, model, griddims)
@@ -330,14 +354,25 @@ end
 function agent_step!(agent::storage, model, griddims)
 end
 
-# Inicializa el modelo
-function initialize_model(; number = 40, griddims = (80, 80))
+# Function to find an agent by its name, limited to box and storage agents
+function find_agent_by_name(name::String, model)
+    for agent in allagents(model)
+        if isa(agent, Union{box, storage}) && agent.name == name
+            return agent
+        end
+    end
+    return nothing # Return nothing if no agent with the given name is found
+end
+
+
+function initialize_model(; griddims=(80, 80), number=80, packer=packer)
     space = GridSpace(griddims; periodic = false, metric = :manhattan)
     model = ABM(Union{robot, box, storage}, space; agent_step! = (a, m) -> agent_step!(a, m, griddims), scheduler = Schedulers.fastest)
 
-    all_positions = [(x, y) for x in 1:griddims[1], y in 1:griddims[2] - 1] 
+    all_positions = [(x, y) for x in 1:griddims[1], y in 1:griddims[2]-1]
     shuffled_positions = shuffle(all_positions)
 
+    # Configurar robots
     num_robots = 5
     bottom_y = griddims[2]
     initial_position = div(griddims[1], 10)
@@ -349,28 +384,32 @@ function initialize_model(; number = 40, griddims = (80, 80))
         add_agent!(robot, model; pos = robot_pos, initial_x = robot_pos[1])
     end
 
-    restricted_positions = []
-    for robot_pos in robot_positions
-        append!(restricted_positions, [(robot_pos[1] + dx, robot_pos[2] + dy) for dx in -1:1, dy in -1:1])
+    # Configurar almacenamiento basado en el empaquetador
+    if packer !== nothing
+        packer_bins = packer[:bins]
+        storage_positions = [(x, griddims[2]) for x in 1:griddims[1] if x % 5 == 0]
+        for (i, bin) in enumerate(packer_bins)
+            pos = storage_positions[i % length(storage_positions) + 1]
+            add_agent!(storage, model; pos = pos, name = bin[:name])
+        end
+
+        # Añadir todas las cajas (aptas e inapropiadas)
+        all_items = packer[:items]
+        for (i, item) in enumerate(all_items)
+            container_name = assigned_boxes[item[:name]]
+            pos = shuffled_positions[i % length(shuffled_positions) + 1]
+            add_agent!(box, model;
+                pos = pos,
+                name = item[:name],
+                container = container_name,
+                assigned_storage = container_name
+            )
+        end
+    else
+        error("El empaquetador es obligatorio para esta lógica.")
     end
 
-    valid_positions = setdiff(shuffled_positions, restricted_positions)
-
-    if length(valid_positions) < number
-        error("No hay suficientes posiciones válidas para las cajas")
-    end
-
-    # Añade cajas a posiciones válidas
-    for i in 1:number
-        add_agent!(box, model; pos = valid_positions[i])
-    end
-
-    # Llena la última fila con almacenamiento, excluyendo posiciones de coches
-    bottom_row_positions = [(x, bottom_y) for x in 1:griddims[1] if (x, bottom_y) ∉ robot_positions]
-    
-    for pos in bottom_row_positions
-        add_agent!(storage, model; pos = pos)
-    end
+    calculate_dependencies!(model)
 
     return model
 end
