@@ -218,40 +218,42 @@ function try_move!(agent::robot, model, dx::Int, dy::Int, griddims)
     end
 end
 
-# Determina las dependencias físicas (cajas encima)
-function calculate_dependencies!(model)
-    for b in allagents(model)
-        if isa(b, box)
-            for other in allagents(model)
-                if isa(other, box) && b !== other
-                    # Considera como "encima" si están en la misma posición X/Y y el otro tiene menor profundidad
-                    if b.pos[1] == other.pos[1] && b.pos[2] == other.pos[2] && b.depth < other.depth
-                        push!(b.depends_on, other.name)
-                    end
-                end
-            end
-        end
-    end
-end
-
 # Función para verificar si una caja está lista para ser recolectada
 function is_ready_to_collect(agent::box, model)
     return isempty(agent.depends_on) || all(dep -> find_agent_by_name(dep, model).status == delivered, agent.depends_on) || all(dep -> find_agent_by_name(dep, model).status == taken, agent.depends_on)
 end
 
-# Modificar la lógica del paso del robot para que las cajas sigan a los RobotStatus
-function agent_step!(agent::robot, model, griddims)
-    # Si el robot está vacío, busca una caja elegible para recoger
-    if agent.capacity == empty
-        closest_box, _ = closest_box_nearby(agent, model)
+# Actualizar la lógica de `next_box_in_order` para incluir dependencias
+function next_box_in_order(agent::robot, model, packer, assigned_boxes)
+    for bin in packer[:bins]
+        for item in bin[:items]
+            # Buscar la caja con el nombre correspondiente
+            for neighbor in allagents(model)
+                if isa(neighbor, box) && neighbor.status == waiting && neighbor.name == item[:name]
+                    # Verificar que todas las dependencias hayan sido entregadas
+                    if all(dep -> find_agent_by_name(dep, model).status == delivered, neighbor.depends_on)
+                        return neighbor
+                    end
+                end
+            end
+        end
+    end
+    return nothing
+end
 
-        if closest_box !== nothing
+# Modificar la lógica para que el robot espere a que las dependencias se entreguen
+function agent_step!(agent::robot, model, griddims)
+    if agent.capacity == empty
+        # Busca la siguiente caja en orden
+        next_box = next_box_in_order(agent, model, packer, assigned_boxes)
+
+        if next_box !== nothing
             # Dirígete hacia la caja
-            move_towards!(agent, closest_box.pos, model, griddims)
-            if agent.pos === closest_box.pos
-                closest_box.status = taken
+            move_towards!(agent, next_box.pos, model, griddims)
+            if agent.pos === next_box.pos
+                next_box.status = taken
                 agent.capacity = full
-                agent.carried_box = closest_box
+                agent.carried_box = next_box
             end
         else
             return
@@ -262,12 +264,20 @@ function agent_step!(agent::robot, model, griddims)
             agent.carried_box.pos = agent.pos  # La caja sigue al robot
         end
 
-        # Lógica para entregar la caja en el almacenamiento más cercano
-        closest_storage, _ = closest_storage_nearby(agent, model)
-        if closest_storage !== nothing
-            move_towards!(agent, closest_storage.pos, model, griddims)
-            if is_adjacent(agent.pos, closest_storage.pos)
-                deliver_box_in_front!(agent, model, closest_storage)
+        # Verifica si las dependencias de la caja han sido entregadas
+        if !all(dep -> find_agent_by_name(dep, model).status == delivered, agent.carried_box.depends_on)
+            println("El robot $(agent.id) está esperando a que se entreguen las dependencias de la caja $(agent.carried_box.name).")
+            return  # Espera hasta que las dependencias se entreguen
+        end
+
+        # Intenta entregar la caja al almacenamiento asignado
+        assigned_storage_name = agent.carried_box.assigned_storage
+        storage_agent = find_agent_by_name(assigned_storage_name, model)
+
+        if storage_agent !== nothing
+            move_towards!(agent, storage_agent.pos, model, griddims)
+            if is_adjacent(agent.pos, storage_agent.pos)
+                deliver_box_in_front!(agent, model, storage_agent)
                 return_to_initial_x!(agent, model, griddims)
             end
         end
@@ -365,6 +375,27 @@ function find_agent_by_name(name::String, model)
 end
 
 
+# Modificar `calculate_dependencies!` para establecer correctamente las dependencias
+function calculate_dependencies!(model, packer)
+    # Iterar sobre los contenedores en el empaquetador
+    for bin in packer[:bins]
+        previous_box_name = nothing  # Variable para rastrear la caja anterior
+        for item in bin[:items]
+            # Encontrar la caja correspondiente en el modelo
+            current_box = find_agent_by_name(item[:name], model)
+            if current_box !== nothing
+                # Si hay una caja anterior, agregarla como dependencia
+                if previous_box_name !== nothing
+                    push!(current_box.depends_on, previous_box_name)
+                end
+                # Actualizar la caja anterior
+                previous_box_name = item[:name]
+            end
+        end
+    end
+end
+
+# Modificar `initialize_model` para pasar el empaquetador a `calculate_dependencies!`
 function initialize_model(; griddims=(80, 80), number=80, packer=packer)
     space = GridSpace(griddims; periodic = false, metric = :manhattan)
     model = ABM(Union{robot, box, storage}, space; agent_step! = (a, m) -> agent_step!(a, m, griddims), scheduler = Schedulers.fastest)
@@ -409,7 +440,9 @@ function initialize_model(; griddims=(80, 80), number=80, packer=packer)
         error("El empaquetador es obligatorio para esta lógica.")
     end
 
-    calculate_dependencies!(model)
+    # Calcular dependencias usando el empaquetador
+    calculate_dependencies!(model, packer)
 
     return model
 end
+
