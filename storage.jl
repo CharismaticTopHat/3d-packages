@@ -223,17 +223,14 @@ function is_ready_to_collect(agent::box, model)
     return isempty(agent.depends_on) || all(dep -> find_agent_by_name(dep, model).status == delivered, agent.depends_on) || all(dep -> find_agent_by_name(dep, model).status == taken, agent.depends_on)
 end
 
-# Actualizar la lógica de `next_box_in_order` para incluir dependencias
+# Modificar la lógica de `next_box_in_order` para ignorar dependencias al seleccionar la caja
 function next_box_in_order(agent::robot, model, packer, assigned_boxes)
     for bin in packer[:bins]
         for item in bin[:items]
             # Buscar la caja con el nombre correspondiente
             for neighbor in allagents(model)
                 if isa(neighbor, box) && neighbor.status == waiting && neighbor.name == item[:name]
-                    # Verificar que todas las dependencias hayan sido entregadas
-                    if all(dep -> find_agent_by_name(dep, model).status == delivered, neighbor.depends_on)
-                        return neighbor
-                    end
+                    return neighbor  # Devuelve la primera caja disponible en orden
                 end
             end
         end
@@ -241,7 +238,6 @@ function next_box_in_order(agent::robot, model, packer, assigned_boxes)
     return nothing
 end
 
-# Modificar la lógica para que el robot espere a que las dependencias se entreguen
 function agent_step!(agent::robot, model, griddims)
     if agent.capacity == empty
         # Busca la siguiente caja en orden
@@ -265,15 +261,23 @@ function agent_step!(agent::robot, model, griddims)
         end
 
         # Verifica si las dependencias de la caja han sido entregadas
-        if !all(dep -> find_agent_by_name(dep, model).status == delivered, agent.carried_box.depends_on)
-            println("El robot $(agent.id) está esperando a que se entreguen las dependencias de la caja $(agent.carried_box.name).")
-            return  # Espera hasta que las dependencias se entreguen
-        end
-
-        # Intenta entregar la caja al almacenamiento asignado
         assigned_storage_name = agent.carried_box.assigned_storage
         storage_agent = find_agent_by_name(assigned_storage_name, model)
 
+        if storage_agent !== nothing
+            dist_to_storage = abs(agent.pos[1] - storage_agent.pos[1]) + abs(agent.pos[2] - storage_agent.pos[2])
+            
+            if !all(dep -> find_agent_by_name(dep, model).status == delivered, agent.carried_box.depends_on)
+                if dist_to_storage <= 8
+                    println("El robot $(agent.id) se detiene cerca del almacenamiento esperando que la dependencia de la caja $(agent.carried_box.name) se entregue.")
+                    return  # Detente hasta que las dependencias se cumplan
+                else
+                    println("El robot $(agent.id) sigue trabajando ya que está fuera del radio de espera para la caja $(agent.carried_box.name).")
+                end
+            end
+        end
+
+        # Intenta entregar la caja al almacenamiento asignado
         if storage_agent !== nothing
             move_towards!(agent, storage_agent.pos, model, griddims)
             if is_adjacent(agent.pos, storage_agent.pos)
