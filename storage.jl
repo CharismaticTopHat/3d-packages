@@ -66,6 +66,8 @@ orient_left = 1
 orient_down = 2
 orient_right = 3
 
+global assigned_box_index = 1
+
 @agent struct box(GridAgent{2})
     name::String
     status::BoxStatus = waiting
@@ -89,7 +91,9 @@ end
     height::Float64 = 0.0
     depth::Float64 = 0.0
     target_box::Union{box, Nothing} = nothing  # Caja asignada al robot
+    current_index::Int = 1  # Índice actual en el orden de b[:items]
 end
+
 
 @agent struct storage(GridAgent{2})
     name::String
@@ -258,7 +262,22 @@ function get_next_box_in_order(current_box_name::Union{String, Nothing}, packer,
     return nothing
 end
 
+function assign_next_box(packer, model)
+    global assigned_box_index
+    all_boxes = [item[:name] for bin in packer[:bins] for item in bin[:items]]
 
+    while assigned_box_index <= length(all_boxes)
+        next_box_name = all_boxes[assigned_box_index]
+        assigned_box_index += 1  # Avanza el índice global
+
+        # Verifica si la caja está disponible en el modelo
+        next_box_agent = find_agent_by_name(next_box_name, model)
+        if next_box_agent !== nothing && next_box_agent.status == waiting
+            return next_box_agent
+        end
+    end
+    return nothing  # No hay más cajas disponibles
+end
 function agent_step!(agent::robot, model, griddims)
     if agent.capacity == empty
         # Dirígete hacia la caja asignada
@@ -284,7 +303,7 @@ function agent_step!(agent::robot, model, griddims)
             dist_to_storage = abs(agent.pos[1] - storage_agent.pos[1]) + abs(agent.pos[2] - storage_agent.pos[2])
             
             if !all(dep -> find_agent_by_name(dep, model).status == delivered, agent.carried_box.depends_on)
-                if dist_to_storage <= 4
+                if dist_to_storage <= 8
                     println("El robot $(agent.id) se detiene cerca del almacenamiento esperando que la dependencia de la caja $(agent.carried_box.name) se entregue.")
                     return  # Detente hasta que las dependencias se cumplan
                 else
@@ -300,8 +319,8 @@ function agent_step!(agent::robot, model, griddims)
                 deliver_box_in_front!(agent, model, storage_agent)
                 return_to_initial_x!(agent, model, griddims)
 
-                # Actualizar el target_box del robot
-                agent.target_box = get_next_box_in_order(agent.carried_box, packer, model)
+                # Asignar nueva caja al robot
+                agent.target_box = assign_next_box(packer, model)
                 agent.carried_box = nothing
                 agent.capacity = empty
                 println("El robot $(agent.id) tiene ahora como objetivo la caja: $(agent.target_box !== nothing ? agent.target_box.name : "ninguna").")
@@ -309,8 +328,6 @@ function agent_step!(agent::robot, model, griddims)
         end
     end
 end
-
-
 
 # Función para que el robot entregue la caja en el almacenamiento
 function deliver_box_in_front!(Robot::robot, model, Storage::storage)
@@ -423,6 +440,8 @@ function calculate_dependencies!(model, packer)
 end
 
 function initialize_model(; griddims=(80, 80), number=80, packer=packer)
+    global assigned_box_index
+    assigned_box_index = 1
     space = GridSpace(griddims; periodic = false, metric = :manhattan)
     model = ABM(Union{robot, box, storage}, space; agent_step! = (a, m) -> agent_step!(a, m, griddims), scheduler = Schedulers.fastest)
 
@@ -462,12 +481,10 @@ function initialize_model(; griddims=(80, 80), number=80, packer=packer)
 
     robot_columns = [initial_position + (i-1) * spacing for i in 1:num_robots]
     robot_positions = [(col, bottom_y) for col in robot_columns]
-    all_boxes = [item[:name] for bin in packer[:bins] for item in bin[:items]]
 
-    for (i, robot_pos) in enumerate(robot_positions)
-        target_box_name = i <= length(all_boxes) ? all_boxes[i] : nothing
-        target_box_agent = target_box_name !== nothing ? find_agent_by_name(target_box_name, model) : nothing
-        add_agent!(robot, model; pos = robot_pos, initial_x = robot_pos[1], target_box = target_box_agent)
+    for robot_pos in robot_positions
+        next_box = assign_next_box(packer, model)
+        add_agent!(robot, model; pos = robot_pos, initial_x = robot_pos[1], target_box = next_box)
     end
 
     calculate_dependencies!(model, packer)
