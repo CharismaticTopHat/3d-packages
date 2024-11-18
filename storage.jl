@@ -151,7 +151,6 @@ function closest_storage_nearby(agent::robot, model)
     return closest_storage, min_distance
 end
 
-# Verifica si otro coche ya está en la posición de destino
 function detect_collision(agent::robot, target_pos, model)
     for neighbor in allagents(model)
         if isa(neighbor, robot) && neighbor !== agent
@@ -162,6 +161,7 @@ function detect_collision(agent::robot, target_pos, model)
     end
     return false
 end
+
 
 function update_orientation_and_counter!(agent::robot, dx::Int, dy::Int)
     new_orientation = agent.orientation
@@ -204,23 +204,78 @@ function update_orientation!(agent::robot, dx::Int, dy::Int)
     end
 end
 
-# Intenta moverse a la nueva posición si no hay colisión y no es una zona restringida
+function robots_in_radius(agent::robot, model, radius::Int)
+    nearby_robots = []
+    for neighbor in allagents(model)
+        if isa(neighbor, robot) && neighbor !== agent
+            dist = abs(agent.pos[1] - neighbor.pos[1]) + abs(agent.pos[2] - neighbor.pos[2])
+            if dist <= radius
+                push!(nearby_robots, neighbor.pos)
+            end
+        end
+    end
+    return nearby_robots
+end
+
 function try_move!(agent::robot, model, dx::Int, dy::Int, griddims)
     current_pos = agent.pos
     new_position = (current_pos[1] + dx, current_pos[2] + dy)
-    agent.nextPos = (new_position[1], new_position[2])
-    
-    if new_position[2] == griddims[2]
-        return false
+    agent.stopped = moving
+
+    # Detecta robots en un radio de 2
+    nearby_robots = robots_in_radius(agent, model, 2)
+
+    if !isempty(nearby_robots)
+        println("Robot $(agent.id) detectó robots cerca en posiciones $nearby_robots. Intentando moverse lejos.")
+
+        # Generar direcciones alternativas que maximicen la distancia a los robots cercanos
+        all_directions = [(1, 0), (-1, 0), (0, 1), (0, -1)]
+        shuffled_directions = shuffle(all_directions)
+
+        best_position = nothing
+        max_distance = 0
+
+        for (alt_dx, alt_dy) in shuffled_directions
+            alt_position = (current_pos[1] + alt_dx, current_pos[2] + alt_dy)
+
+            if valid_position(alt_position, griddims) && !detect_collision(agent, alt_position, model)
+                # Calcular la distancia mínima al grupo de robots cercanos
+                min_dist_to_robots = minimum(abs(alt_position[1] - robot_pos[1]) + abs(alt_position[2] - robot_pos[2]) for robot_pos in nearby_robots)
+
+                if min_dist_to_robots > max_distance
+                    max_distance = min_dist_to_robots
+                    best_position = alt_position
+                end
+            end
+        end
+
+        # Moverse a la mejor posición encontrada
+        if best_position !== nothing
+            move_agent!(agent, best_position, model)
+            update_orientation_and_counter!(agent, best_position[1] - current_pos[1], best_position[2] - current_pos[2])
+            println("Robot $(agent.id) se movió a $best_position para alejarse de robots cercanos.")
+            return true
+        else
+            println("Robot $(agent.id) no encontró una posición para moverse lejos de los robots cercanos.")
+            return false
+        end
     end
 
-    if !detect_collision(agent, new_position, model)
-        move_agent!(agent, new_position, model)
-        update_orientation_and_counter!(agent, dx, dy)  # Update orientation for any movement
-        return true
-    else
-        return false
-    end
+    # Si no hay robots cerca, intenta el movimiento original
+    move_agent!(agent, new_position, model)
+    update_orientation_and_counter!(agent, dx, dy)
+    return true
+end
+
+function valid_position(pos, griddims)
+    return 1 <= pos[1] <= griddims[1] && 1 <= pos[2] <= griddims[2]
+end
+
+
+
+# Función para verificar si una posición es válida
+function valid_position(pos, griddims)
+    return 1 <= pos[1] <= griddims[1] && 1 <= pos[2] <= griddims[2]
 end
 
 # Función para verificar si una caja está lista para ser recolectada
@@ -279,6 +334,18 @@ function assign_next_box(packer, model)
     return nothing  # No hay más cajas disponibles
 end
 function agent_step!(agent::robot, model, griddims)
+    # Si no hay más cajas asignadas
+    if agent.target_box === nothing && agent.capacity == empty
+        # Dirígete a la zona de espera (fila superior del grid)
+        target_position = (agent.pos[1], 1)  # Fila superior
+        move_towards!(agent, target_position, model, griddims)
+
+        if agent.pos[2] == 1
+            agent.stopped = stop  # Marca al robot como detenido en la zona de espera
+        end
+        return
+    end
+
     if agent.capacity == empty
         # Dirígete hacia la caja asignada
         if agent.target_box !== nothing
@@ -305,6 +372,15 @@ function agent_step!(agent::robot, model, griddims)
             if !all(dep -> find_agent_by_name(dep, model).status == delivered, agent.carried_box.depends_on)
                 if dist_to_storage <= 8
                     println("El robot $(agent.id) se detiene cerca del almacenamiento esperando que la dependencia de la caja $(agent.carried_box.name) se entregue.")
+                    current_pos = agent.pos
+                    alt_position = (current_pos[1] - 1, current_pos[2])
+                    move_agent!(agent, alt_position, model)
+                    alt_position = (current_pos[1], current_pos[2] - 1)
+                    move_agent!(agent, alt_position, model)
+                    alt_position = (current_pos[1] - 1, current_pos[2])
+                    move_agent!(agent, alt_position, model)
+                    alt_position = (current_pos[1], current_pos[2] - 1)
+                    move_agent!(agent, alt_position, model)
                     return  # Detente hasta que las dependencias se cumplan
                 else
                     println("El robot $(agent.id) sigue trabajando ya que está fuera del radio de espera para la caja $(agent.carried_box.name).")
@@ -319,14 +395,25 @@ function agent_step!(agent::robot, model, griddims)
                 deliver_box_in_front!(agent, model, storage_agent)
                 return_to_initial_x!(agent, model, griddims)
 
-                # Asignar nueva caja al robot
+                # Asignar nueva caja al robot o enviarlo a la zona de espera
                 agent.target_box = assign_next_box(packer, model)
+                if agent.target_box === nothing
+                    println("El robot $(agent.id) no tiene más cajas asignadas y se dirige a la zona de espera.")
+                end
                 agent.carried_box = nothing
                 agent.capacity = empty
-                println("El robot $(agent.id) tiene ahora como objetivo la caja: $(agent.target_box !== nothing ? agent.target_box.name : "ninguna").")
             end
         end
     end
+end
+
+function all_robots_in_waiting_zone(model)
+    for agent in allagents(model)
+        if isa(agent, robot) && (agent.pos[2] != 1 || agent.stopped != stop)
+            return false
+        end
+    end
+    return true
 end
 
 # Función para que el robot entregue la caja en el almacenamiento
