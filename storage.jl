@@ -3,6 +3,8 @@ using StaticArrays: SVector
 using Dates
 using PyCall
 
+#Python code
+#from py3dbp import Packer, Bin, Item
 Packer = pyimport("py3dbp").Packer
 Bin = pyimport("py3dbp").Bin
 Item = pyimport("py3dbp").Item
