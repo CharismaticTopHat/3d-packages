@@ -9,8 +9,7 @@ from OpenGL.GLUT import *
 import random
 import math
 
-
-class Basura:
+class Package:
     def __init__(self, dim, vel, textures, txtIndex):
         # Se inicializa las coordenadas de los vertices del cubo
         self.vertexCoords = [1,1,1,1,1,-1,1,-1,-1,1,-1,1,-1,1,1,-1,1,-1,-1,-1,-1,-1,-1,1,]
@@ -44,6 +43,8 @@ class Basura:
 
         #Control variable for drawing
         self.alive = True
+        #Control variable for Trailer
+        self.in_cube = False
 
     def update(self):
         # Se debe de calcular la posible nueva posicion del cubo a partir de su
