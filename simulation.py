@@ -154,71 +154,74 @@ def checkCollisions():
 def display():
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
     
-    #Se dibuja cubos
+    # Se dibujan los cubos
     for obj in lifters:
         obj.draw()
         obj.update()    
 
     # Se dibuja el incinerador
     glColor3f(1.0, 0.5, 0.0)  # Color: Naranja
-    square_size = 20.0  # Tamaño
+    square_size = 100.0  # Tamaño de ancho y largo
+    fixed_height = 30.0  # Altura fija del cubo
 
-    half_size = square_size / 2.0
-    # Cara Superior
-    glBegin(GL_QUADS)
-    glVertex3d(-half_size, half_size, -half_size)
-    glVertex3d(-half_size, half_size, half_size)
-    glVertex3d(half_size, half_size, half_size)
-    glVertex3d(half_size, half_size, -half_size)
-    glEnd()
+    # Vértices del prisma
+    base_x = square_size  # Ancho del prisma en X
+    base_z = square_size  # Largo del prisma en Z
+    height_y = fixed_height  # Altura fija del prisma en Y
 
-    # Cara inferior
-    glBegin(GL_QUADS)
-    glVertex3d(-half_size, 0, -half_size)
-    glVertex3d(-half_size, 0, half_size)
-    glVertex3d(half_size, 0, half_size)
-    glVertex3d(half_size, 0, -half_size)
-    glEnd()
+    # Vértice fijo en (0, 0, square_size) — ahora será el vértice inferior trasero izquierdo
+    fixed_vertex = (0, 0, base_z)
 
-    # Cara frontal
-    glBegin(GL_QUADS)
-    glVertex3d(-half_size, 0, half_size)
-    glVertex3d(-half_size, half_size, half_size)
-    glVertex3d(half_size, half_size, half_size)
-    glVertex3d(half_size, 0, half_size)
-    glEnd()
+    # Vértices calculados según el tamaño
+    vertices = [
+        fixed_vertex,  # (0, 0, Z+), vértice inferior trasero izquierdo (fijo)
+        (base_x, 0, base_z),  # (X+, 0, Z+), vértice inferior trasero derecho
+        (base_x, 0, 0),  # (X+, 0, 0), vértice inferior delantero derecho
+        (0, 0, 0),  # (0, 0, 0), vértice inferior delantero izquierdo
+        (0, height_y, base_z),  # (0, Y+, Z+), vértice superior trasero izquierdo
+        (base_x, height_y, base_z),  # (X+, Y+, Z+), vértice superior trasero derecho
+        (base_x, height_y, 0),  # (X+, Y+, 0), vértice superior delantero derecho
+        (0, height_y, 0),  # (0, Y+, 0), vértice superior delantero izquierdo
+    ]
 
-    # Cara trasera
-    glBegin(GL_QUADS)
-    glVertex3d(-half_size, 0, -half_size)
-    glVertex3d(-half_size, half_size, -half_size)
-    glVertex3d(half_size, half_size, -half_size)
-    glVertex3d(half_size, 0, -half_size)
-    glEnd()
+    # Dibujar caras del prisma
+    faces = [
+            # Cara inferior
+            [vertices[3], vertices[2], vertices[1], vertices[0]],
+            # Cara superior
+            #[vertices[4], vertices[5], vertices[6], vertices[7]],
+            # Cara frontal
+            #[vertices[7], vertices[6], vertices[2], vertices[3]],
+            # Cara trasera
+            [vertices[4], vertices[5], vertices[1], vertices[0]],
+            # Cara izquierda
+            #[vertices[4], vertices[7], vertices[3], vertices[0]],
+            # Cara derecha
+            [vertices[5], vertices[6], vertices[2], vertices[1]],
+        ]
 
-    # Cara izquierda
-    glBegin(GL_QUADS)
-    glVertex3d(-half_size, 0, -half_size)
-    glVertex3d(-half_size, half_size, -half_size)
-    glVertex3d(-half_size, half_size, half_size)
-    glVertex3d(-half_size, 0, half_size)
-    glEnd()
+    # Dibujar cada cara del prisma
+    for i, face in enumerate(faces):
+        glBegin(GL_QUADS)
+        
+        # Establecer el color de la cara según su índice
+        if i == 2:  # Cara derecha
+            glColor3f(0.0, 0.0, 1.0)  # Azul
+        elif i == 1:  # Cara delantera
+            glColor3f(0.0, 1.0, 0.0)  # Verde
+        else:
+            glColor3f(1.0, 0.5, 0.0)  # Naranja para otras caras
+        
+        # Dibujar los vértices de la cara
+        for vertex in face:
+            glVertex3d(*vertex)
+        glEnd()
 
-    # Cara derecha
-    glBegin(GL_QUADS)
-    glVertex3d(half_size, 0, -half_size)
-    glVertex3d(half_size, half_size, -half_size)
-    glVertex3d(half_size, half_size, half_size)
-    glVertex3d(half_size, 0, half_size)
-    glEnd()
-    
-    #Se dibujan basuras
+    # Se dibujan basuras
     for obj in basuras:
         obj.draw()
-        #obj.update()    
-    #Axis()
-    
-    #Se dibuja el plano gris
+
+    # Dibujar el plano gris
     planoText()
     glColor3f(0.3, 0.3, 0.3)
     glBegin(GL_QUADS)
