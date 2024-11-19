@@ -55,7 +55,7 @@ radius = 300
 
 # Arreglo para el manejo de texturas
 textures = []
-filenames = ["Plataformas/img1.bmp","Plataformas/wheel.jpeg", "Plataformas/walle.jpeg","Plataformas/basura.bmp"]
+filenames = ["Plataformas/bars.jpg","Plataformas/wheel.jpeg", "Plataformas/machine.jpg","Plataformas/Cardboard.svg", "Plataformas/Wall.jpg", "Plataformas/TrailerWall.svg"]
 
 def Axis():
     glShadeModel(GL_FLAT)
@@ -90,6 +90,7 @@ def Texturas(filepath):
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR)
     image = pygame.image.load(filepath).convert()
     w, h = image.get_rect().size
+    image = pygame.image.load(filepath).convert_alpha()  # Ensure image has an alpha channel
     image_data = pygame.image.tostring(image, "RGBA")
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, w, h, 0, GL_RGBA, GL_UNSIGNED_BYTE, image_data)
     glGenerateMipmap(GL_TEXTURE_2D)
@@ -216,7 +217,7 @@ def display():
         for vertex in face:
             glVertex3d(*vertex)
         glEnd()
-
+    
     # Se dibujan basuras
     for obj in basuras:
         obj.draw()
@@ -236,37 +237,57 @@ def display():
     
     glColor3f(0.8, 0.8, 0.8)  # Light gray color for walls
     
-    # Draw the left wall
+    # Paredes Exteriores
+    # Pared Izquierda
+    glEnable(GL_TEXTURE_2D)
+    glBindTexture(GL_TEXTURE_2D, textures[4])
     glBegin(GL_QUADS)
+    glTexCoord2f(0.0, 0.0)
     glVertex3d(-DimBoard, 0, -DimBoard)
+    glTexCoord2f(0.0, 1.0)
     glVertex3d(-DimBoard, 0, DimBoard)
+    glTexCoord2f(1.0, 1.0)
     glVertex3d(-DimBoard, wall_height, DimBoard)
+    glTexCoord2f(1.0, 0.0)
     glVertex3d(-DimBoard, wall_height, -DimBoard)
     glEnd()
     
-    # Draw the right wall
+    # Pared Derecha
     glBegin(GL_QUADS)
+    glTexCoord2f(0.0, 0.0)
     glVertex3d(DimBoard, 0, -DimBoard)
+    glTexCoord2f(0.0, 1.0)
     glVertex3d(DimBoard, 0, DimBoard)
+    glTexCoord2f(1.0, 1.0)
     glVertex3d(DimBoard, wall_height, DimBoard)
+    glTexCoord2f(1.0, 0.0)
     glVertex3d(DimBoard, wall_height, -DimBoard)
     glEnd()
     
-    # Draw the front wall
+    # Pared Frontal
     glBegin(GL_QUADS)
+    glTexCoord2f(0.0, 0.0)
     glVertex3d(-DimBoard, 0, DimBoard)
+    glTexCoord2f(0.0, 1.0)
     glVertex3d(DimBoard, 0, DimBoard)
+    glTexCoord2f(1.0, 1.0)
     glVertex3d(DimBoard, wall_height, DimBoard)
+    glTexCoord2f(1.0, 0.0)
     glVertex3d(-DimBoard, wall_height, DimBoard)
     glEnd()
     
-    # Draw the back wall
+    # Pared Trasera
     glBegin(GL_QUADS)
+    glTexCoord2f(0.0, 0.0)
     glVertex3d(-DimBoard, 0, -DimBoard)
+    glTexCoord2f(0.0, 1.0)
     glVertex3d(DimBoard, 0, -DimBoard)
+    glTexCoord2f(1.0, 1.0)
     glVertex3d(DimBoard, wall_height, -DimBoard)
+    glTexCoord2f(1.0, 0.0)
     glVertex3d(-DimBoard, wall_height, -DimBoard)
     glEnd()
+    glDisable(GL_TEXTURE_2D)
 
     checkCollisions()
     
