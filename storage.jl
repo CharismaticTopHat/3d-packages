@@ -91,9 +91,9 @@ end
     height::Float64 = 0.0
     depth::Float64 = 0.0
     target_box::Union{box, Nothing} = nothing  # Caja asignada al robot
-    current_index::Int = 1  # Índice actual en el orden de b[:items]
+    assigned_boxes::Vector{String} = []  # Cajas asignadas al robot
+    current_index::Int = 1  # Índice actual en el arreglo assigned_boxes
 end
-
 
 @agent struct storage(GridAgent{2})
     name::String
@@ -153,7 +153,7 @@ end
 
 function detect_collision(agent::robot, target_pos, model)
     for neighbor in allagents(model)
-        if isa(neighbor, robot) && neighbor !== agent
+        if isa(neighbor, robot) && neighbor !== agent && agent.stopped != stop
             if neighbor.pos == target_pos
                 return true
             end
@@ -220,51 +220,42 @@ end
 function try_move!(agent::robot, model, dx::Int, dy::Int, griddims)
     current_pos = agent.pos
     new_position = (current_pos[1] + dx, current_pos[2] + dy)
-    agent.stopped = moving
 
-    # Detecta robots en un radio de 2
-    nearby_robots = robots_in_radius(agent, model, 2)
-
-    if !isempty(nearby_robots)
-        println("Robot $(agent.id) detectó robots cerca en posiciones $nearby_robots. Intentando moverse lejos.")
-
-        # Generar direcciones alternativas que maximicen la distancia a los robots cercanos
-        all_directions = [(1, 0), (-1, 0), (0, 1), (0, -1)]
-        shuffled_directions = shuffle(all_directions)
-
-        best_position = nothing
-        max_distance = 0
-
-        for (alt_dx, alt_dy) in shuffled_directions
-            alt_position = (current_pos[1] + alt_dx, current_pos[2] + alt_dy)
-
-            if valid_position(alt_position, griddims) && !detect_collision(agent, alt_position, model)
-                # Calcular la distancia mínima al grupo de robots cercanos
-                min_dist_to_robots = minimum(abs(alt_position[1] - robot_pos[1]) + abs(alt_position[2] - robot_pos[2]) for robot_pos in nearby_robots)
-
-                if min_dist_to_robots > max_distance
-                    max_distance = min_dist_to_robots
-                    best_position = alt_position
-                end
-            end
-        end
-
-        # Moverse a la mejor posición encontrada
-        if best_position !== nothing
-            move_agent!(agent, best_position, model)
-            update_orientation_and_counter!(agent, best_position[1] - current_pos[1], best_position[2] - current_pos[2])
-            println("Robot $(agent.id) se movió a $best_position para alejarse de robots cercanos.")
-            return true
-        else
-            println("Robot $(agent.id) no encontró una posición para moverse lejos de los robots cercanos.")
-            return false
+    # Detectar robots como obstáculos
+    obstacles = Set()
+    for neighbor in allagents(model)
+        if isa(neighbor, robot) && neighbor !== agent
+            push!(obstacles, neighbor.pos)
         end
     end
 
-    # Si no hay robots cerca, intenta el movimiento original
-    move_agent!(agent, new_position, model)
-    update_orientation_and_counter!(agent, dx, dy)
-    return true
+    # Verificar si la nueva posición es válida y no está ocupada
+    if valid_position(new_position, griddims) && !(new_position in obstacles)
+        move_agent!(agent, new_position, model)
+        update_orientation_and_counter!(agent, dx, dy)
+        return true
+    else
+        # Intentar rutas alternativas
+        println("Robot $(agent.id) encuentra obstáculo en la posición $new_position. Buscando ruta alternativa.")
+
+        # Generar direcciones alternativas
+        alternative_directions = [(1, 0), (-1, 0), (0, 1), (0, -1)]
+        shuffle!(alternative_directions)
+
+        for (alt_dx, alt_dy) in alternative_directions
+            alt_position = (current_pos[1] + alt_dx, current_pos[2] + alt_dy)
+
+            if valid_position(alt_position, griddims) && !(alt_position in obstacles)
+                move_agent!(agent, alt_position, model)
+                update_orientation_and_counter!(agent, alt_dx, alt_dy)
+                println("Robot $(agent.id) se movió a $alt_position para evitar obstáculos.")
+                return true
+            end
+        end
+
+        println("Robot $(agent.id) no encontró ruta alternativa y permanece en su lugar.")
+        return false
+    end
 end
 
 function valid_position(pos, griddims)
@@ -371,16 +362,7 @@ function agent_step!(agent::robot, model, griddims)
             
             if !all(dep -> find_agent_by_name(dep, model).status == delivered, agent.carried_box.depends_on)
                 if dist_to_storage <= 8
-                    println("El robot $(agent.id) se detiene cerca del almacenamiento esperando que la dependencia de la caja $(agent.carried_box.name) se entregue.")
-                    current_pos = agent.pos
-                    alt_position = (current_pos[1] - 1, current_pos[2])
-                    move_agent!(agent, alt_position, model)
-                    alt_position = (current_pos[1], current_pos[2] - 1)
-                    move_agent!(agent, alt_position, model)
-                    alt_position = (current_pos[1] - 1, current_pos[2])
-                    move_agent!(agent, alt_position, model)
-                    alt_position = (current_pos[1], current_pos[2] - 1)
-                    move_agent!(agent, alt_position, model)
+                    println("El robot $(agent.id) está dentro del radio de 4 del almacenamiento para la caja $(agent.carried_box.name). Moviéndose temporalmente hacia arriba.")
                     return  # Detente hasta que las dependencias se cumplan
                 else
                     println("El robot $(agent.id) sigue trabajando ya que está fuera del radio de espera para la caja $(agent.carried_box.name).")
@@ -409,7 +391,7 @@ end
 
 function all_robots_in_waiting_zone(model)
     for agent in allagents(model)
-        if isa(agent, robot) && (agent.pos[2] != 1 || agent.stopped != stop)
+        if isa(agent, robot) && (agent.pos[2] != 1)
             return false
         end
     end
@@ -463,29 +445,127 @@ function deliver_box_in_front!(Robot::robot, model, Storage::storage)
 end
 
 
-# Mover hacia una posición objetivo sin entrar en la última fila
+# Implementación de A* (A-star) sin librerías externas
+function find_path(start_pos, end_pos, obstacles, griddims)
+    open_set = [start_pos]  # Lista de nodos abiertos (por explorar)
+    came_from = Dict()  # Rastrear el camino para reconstruirlo
+    g_score = Dict(start_pos => 0)  # Coste desde el inicio hasta el nodo
+    f_score = Dict(start_pos => manhattan_distance(start_pos, end_pos))  # Coste total estimado
+
+    while !isempty(open_set)
+        # Encuentra el nodo con menor f_score
+        current = open_set[argmin([get(f_score, pos, Inf) for pos in open_set])]
+
+        # Si llegamos al destino, reconstruimos el camino
+        if current == end_pos
+            return reconstruct_path(came_from, current)
+        end
+
+        # Remueve el nodo actual de la lista de abiertos
+        deleteat!(open_set, findfirst(x -> x == current, open_set))
+
+        # Explora vecinos
+        for neighbor in get_neighbors(current, griddims)
+            if neighbor in obstacles
+                continue  # Salta si es un obstáculo
+            end
+
+            tentative_g_score = get(g_score, current, Inf) + 1  # El coste al vecino
+
+            if tentative_g_score < get(g_score, neighbor, Inf)
+                # Este camino es mejor, actualizamos las estructuras
+                came_from[neighbor] = current
+                g_score[neighbor] = tentative_g_score
+                f_score[neighbor] = tentative_g_score + manhattan_distance(neighbor, end_pos)
+
+                # Añadimos a la lista de abiertos si no está ya
+                if neighbor ∉ open_set
+                    push!(open_set, neighbor)
+                end
+            end
+        end
+    end
+
+    return []  # Si no hay camino, devolvemos una lista vacía
+end
+
+# Distancia Manhattan para calcular heurística
+function manhattan_distance(pos1, pos2)
+    return abs(pos1[1] - pos2[1]) + abs(pos1[2] - pos2[2])
+end
+
+# Reconstrucción del camino desde `came_from`
+function reconstruct_path(came_from, current)
+    path = [current]
+    while current in keys(came_from)
+        current = came_from[current]
+        push!(path, current)
+    end
+    return reverse(path)
+end
+
+# Obtener vecinos válidos de una posición
+function get_neighbors(pos, griddims)
+    neighbors = [(pos[1] + dx, pos[2] + dy) for (dx, dy) in [(1, 0), (-1, 0), (0, 1), (0, -1)]]
+    return filter(x -> valid_position(x, griddims), neighbors)
+end
+
+# Buscar una posición disponible en x para y = 1
+function find_available_x(y, griddims, model)
+    available_positions = []
+    for x in 1:griddims[1]
+        pos = (x, y)
+        if !is_position_occupied(pos, model)
+            push!(available_positions, pos)
+        end
+    end
+    return isempty(available_positions) ? nothing : rand(available_positions)  # Devuelve una aleatoria o `nothing`
+end
+
+# Detectar si la posición está ocupada por otro robot
+function is_position_occupied(pos, model)
+    for neighbor in allagents(model)
+        if isa(neighbor, robot) && neighbor.pos == pos
+            return true
+        end
+    end
+    return false
+end
+
+# Modificar move_towards! para manejar casos en y = 1
 function move_towards!(agent::robot, target_pos, model, griddims)
     current_pos = agent.pos
-    diff_x = target_pos[1] - current_pos[1]
-    diff_y = target_pos[2] - current_pos[2]
 
-    # Determina direcciones primaria y secundaria
-    primary, secondary = if abs(diff_x) > abs(diff_y)
-        ((sign(diff_x), 0), (0, sign(diff_y)))
-    else
-        ((0, sign(diff_y)), (sign(diff_x), 0))
+    # Detectar obstáculos (otros robots)
+    obstacles = Set([neighbor.pos for neighbor in allagents(model) if isa(neighbor, robot) && neighbor !== agent])
+
+    # Calcular ruta usando A*
+    path = find_path(current_pos, target_pos, obstacles, griddims)
+    
+    # Validar el contenido de `path`
+    if isempty(path)
+        println("Robot $(agent.id): No se encontró ruta válida hacia $target_pos.")
+
+        # Si el destino está en y = 1, buscar otra posición válida en x
+        if target_pos[2] == 1
+            new_target_pos = find_available_x(1, griddims, model)
+            if new_target_pos !== nothing
+                println("Robot $(agent.id): Moviéndose a una nueva posición disponible $new_target_pos en y = 1.")
+                move_towards!(agent, new_target_pos, model, griddims)
+            else
+                println("Robot $(agent.id): No hay posiciones disponibles en y = 1.")
+            end
+        end
+        return
+    elseif length(path) == 1
+        println("Robot $(agent.id): Ya está en la posición objetivo $current_pos.")
+        return
     end
 
-    # Intenta la dirección primaria sin entrar en la última fila
-    if (current_pos[2] + primary[2]) < griddims[2] && try_move!(agent, model, primary[1], primary[2], griddims)
-        # Movimiento exitoso
-        update_orientation_and_counter!(agent, primary[1], primary[2])
-    elseif (current_pos[2] + secondary[2]) < griddims[2] && try_move!(agent, model, secondary[1], secondary[2], griddims)
-        # Movimiento exitoso
-        update_orientation_and_counter!(agent, secondary[1], secondary[2])
-    else
-        println("No se encuentra manera de llegar al destino deseado. Se detendrá el agente.")
-    end
+    # Mover hacia el siguiente paso en la ruta
+    next_step = path[2]  # Primer paso después de la posición actual
+    dx, dy = next_step[1] - current_pos[1], next_step[2] - current_pos[2]
+    try_move!(agent, model, dx, dy, griddims)
 end
 
 # Funciones de paso de agente para Caja y Almacenamiento (sin acción)
