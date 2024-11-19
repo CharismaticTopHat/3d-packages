@@ -164,11 +164,52 @@ def display():
     square_size = 20.0  # Tamaño
 
     half_size = square_size / 2.0
+    # Cara Superior
     glBegin(GL_QUADS)
-    glVertex3d(-half_size, 0.5, -half_size)
-    glVertex3d(-half_size, 0.5, half_size)
-    glVertex3d(half_size, 0.5, half_size)
-    glVertex3d(half_size, 0.5, -half_size)
+    glVertex3d(-half_size, half_size, -half_size)
+    glVertex3d(-half_size, half_size, half_size)
+    glVertex3d(half_size, half_size, half_size)
+    glVertex3d(half_size, half_size, -half_size)
+    glEnd()
+
+    # Cara inferior
+    glBegin(GL_QUADS)
+    glVertex3d(-half_size, 0, -half_size)
+    glVertex3d(-half_size, 0, half_size)
+    glVertex3d(half_size, 0, half_size)
+    glVertex3d(half_size, 0, -half_size)
+    glEnd()
+
+    # Cara frontal
+    glBegin(GL_QUADS)
+    glVertex3d(-half_size, 0, half_size)
+    glVertex3d(-half_size, half_size, half_size)
+    glVertex3d(half_size, half_size, half_size)
+    glVertex3d(half_size, 0, half_size)
+    glEnd()
+
+    # Cara trasera
+    glBegin(GL_QUADS)
+    glVertex3d(-half_size, 0, -half_size)
+    glVertex3d(-half_size, half_size, -half_size)
+    glVertex3d(half_size, half_size, -half_size)
+    glVertex3d(half_size, 0, -half_size)
+    glEnd()
+
+    # Cara izquierda
+    glBegin(GL_QUADS)
+    glVertex3d(-half_size, 0, -half_size)
+    glVertex3d(-half_size, half_size, -half_size)
+    glVertex3d(-half_size, half_size, half_size)
+    glVertex3d(-half_size, 0, half_size)
+    glEnd()
+
+    # Cara derecha
+    glBegin(GL_QUADS)
+    glVertex3d(half_size, 0, -half_size)
+    glVertex3d(half_size, half_size, -half_size)
+    glVertex3d(half_size, half_size, half_size)
+    glVertex3d(half_size, 0, half_size)
     glEnd()
     
     #Se dibujan basuras
