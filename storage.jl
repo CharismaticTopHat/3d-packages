@@ -100,23 +100,6 @@ end
     boxes::Vector{box} = []
 end
 
-# Buscar la caja más cercana elegible
-function closest_box_nearby(agent::robot, model)
-    closest_box = nothing
-    min_distance = Inf
-
-    for neighbor in allagents(model)
-        if isa(neighbor, box) && neighbor.status == waiting && does_box_fit(neighbor.name, neighbor.assigned_storage, packer)
-            dist_to_neighbor = abs(neighbor.pos[1] - agent.pos[1]) + abs(neighbor.pos[2] - agent.pos[2])
-            if dist_to_neighbor < min_distance
-                min_distance = dist_to_neighbor
-                closest_box = neighbor
-            end
-        end
-    end
-    return closest_box, min_distance
-end
-
 # Verificar si una caja es apta
 function does_box_fit(box_name::String, storage_name::String, packer)
     for bin in packer[:bins]
@@ -125,37 +108,6 @@ function does_box_fit(box_name::String, storage_name::String, packer)
                 if fitted_item[:name] == box_name
                     return true
                 end
-            end
-        end
-    end
-    return false
-end
-
-
-# Función para encontrar el almacenamiento más cercano usando distancia Manhattan
-function closest_storage_nearby(agent::robot, model)
-    closest_storage = nothing
-    min_distance = Inf
-
-    for neighbor in allagents(model)
-        if isa(neighbor, storage)
-            if neighbor.boxes != 0
-                dist_to_neighbor = abs(neighbor.pos[1] - agent.pos[1]) + abs(neighbor.pos[2] - agent.pos[2])
-                if dist_to_neighbor < min_distance
-                    min_distance = dist_to_neighbor
-                    closest_storage = neighbor
-                end
-            end
-        end
-    end
-    return closest_storage, min_distance
-end
-
-function detect_collision(agent::robot, target_pos, model)
-    for neighbor in allagents(model)
-        if isa(neighbor, robot) && neighbor !== agent && agent.stopped != stop
-            if neighbor.pos == target_pos
-                return true
             end
         end
     end
@@ -181,9 +133,9 @@ function update_orientation_and_counter!(agent::robot, dx::Int, dy::Int)
 
     if agent.orientation != new_orientation
         if (agent.orientation == orient_up && new_orientation == orient_down) ||
-           (agent.orientation == orient_left && new_orientation == orient_right) ||
-           (agent.orientation == orient_down && new_orientation == orient_up) ||
-           (agent.orientation == orient_right && new_orientation == orient_left)
+            (agent.orientation == orient_left && new_orientation == orient_right) ||
+            (agent.orientation == orient_down && new_orientation == orient_up) ||
+            (agent.orientation == orient_right && new_orientation == orient_left)
             agent.counter = 18 
         else
             agent.counter = 9
@@ -202,19 +154,6 @@ function update_orientation!(agent::robot, dx::Int, dy::Int)
     elseif dy == -1
         agent.orientation = orient_down
     end
-end
-
-function robots_in_radius(agent::robot, model, radius::Int)
-    nearby_robots = []
-    for neighbor in allagents(model)
-        if isa(neighbor, robot) && neighbor !== agent
-            dist = abs(agent.pos[1] - neighbor.pos[1]) + abs(agent.pos[2] - neighbor.pos[2])
-            if dist <= radius
-                push!(nearby_robots, neighbor.pos)
-            end
-        end
-    end
-    return nearby_robots
 end
 
 function try_move!(agent::robot, model, dx::Int, dy::Int, griddims)
@@ -258,37 +197,6 @@ function try_move!(agent::robot, model, dx::Int, dy::Int, griddims)
     end
 end
 
-function valid_position(pos, griddims)
-    return 1 <= pos[1] <= griddims[1] && 1 <= pos[2] <= griddims[2]
-end
-
-
-
-# Función para verificar si una posición es válida
-function valid_position(pos, griddims)
-    return 1 <= pos[1] <= griddims[1] && 1 <= pos[2] <= griddims[2]
-end
-
-# Función para verificar si una caja está lista para ser recolectada
-function is_ready_to_collect(agent::box, model)
-    return isempty(agent.depends_on) || all(dep -> find_agent_by_name(dep, model).status == delivered, agent.depends_on) || all(dep -> find_agent_by_name(dep, model).status == taken, agent.depends_on)
-end
-
-# Modificar la lógica de `next_box_in_order` para ignorar dependencias al seleccionar la caja
-function next_box_in_order(agent::robot, model, packer, assigned_boxes)
-    for bin in packer[:bins]
-        for item in bin[:items]
-            # Buscar la caja con el nombre correspondiente
-            for neighbor in allagents(model)
-                if isa(neighbor, box) && neighbor.status == waiting && neighbor.name == item[:name]
-                    return neighbor  # Devuelve la primera caja disponible en orden
-                end
-            end
-        end
-    end
-    return nothing
-end
-
 function get_next_box_in_order(current_box_name::Union{String, Nothing}, packer, model)
     found_current = current_box_name === nothing  # Flag para iniciar la búsqueda
     for bin in packer[:bins]
@@ -308,13 +216,11 @@ function get_next_box_in_order(current_box_name::Union{String, Nothing}, packer,
     return nothing
 end
 
-function assign_next_box(packer, model)
-    global assigned_box_index
+function assign_next_box(packer, model, box_index_ref::Base.RefValue{Int})
     all_boxes = [item[:name] for bin in packer[:bins] for item in bin[:items]]
-
-    while assigned_box_index <= length(all_boxes)
-        next_box_name = all_boxes[assigned_box_index]
-        assigned_box_index += 1  # Avanza el índice global
+    while box_index_ref[] <= length(all_boxes)
+        next_box_name = all_boxes[box_index_ref[]]
+        box_index_ref[] += 1  # Avanza el índice local
 
         # Verifica si la caja está disponible en el modelo
         next_box_agent = find_agent_by_name(next_box_name, model)
@@ -324,7 +230,8 @@ function assign_next_box(packer, model)
     end
     return nothing  # No hay más cajas disponibles
 end
-function agent_step!(agent::robot, model, griddims)
+
+function agent_step!(agent::robot, model, griddims, box_index_ref::Base.RefValue{Int})
     # Si no hay más cajas asignadas
     if agent.target_box === nothing && agent.capacity == empty
         # Dirígete a la zona de espera (fila superior del grid)
@@ -378,7 +285,7 @@ function agent_step!(agent::robot, model, griddims)
                 return_to_initial_x!(agent, model, griddims)
 
                 # Asignar nueva caja al robot o enviarlo a la zona de espera
-                agent.target_box = assign_next_box(packer, model)
+                agent.target_box = assign_next_box(packer, model, box_index_ref)
                 if agent.target_box === nothing
                     println("El robot $(agent.id) no tiene más cajas asignadas y se dirige a la zona de espera.")
                 end
@@ -398,52 +305,24 @@ function all_robots_in_waiting_zone(model)
     return true
 end
 
-# Función para que el robot entregue la caja en el almacenamiento
+# Una única versión para deliver_box_in_front!
 function deliver_box_in_front!(Robot::robot, model, Storage::storage)
     if Robot.carried_box !== nothing
         delivered_box = Robot.carried_box
         push!(Storage.boxes, delivered_box)  # Añadir la caja al almacenamiento
-        delivered_box.status = delivered    # Marcar la caja como entregada
-        delivered_box.pos = Storage.pos     # Actualizar la posición de la caja al almacenamiento
-        Robot.carried_box = nothing         # El robot deja de transportar la caja
-        Robot.capacity = empty              # Marcar al robot como vacío
+        delivered_box.status = delivered    # Marcar como entregada
+        delivered_box.pos = Storage.pos     # Actualizar la posición
+        Robot.carried_box = nothing         # Limpiar el robot
+        Robot.capacity = empty              # Marcar el robot como vacío
     end
 end
+
 
 
 # Función auxiliar para verificar si dos posiciones son adyacentes (sin diagonal)
 function is_adjacent(pos1, pos2)
     return (pos1[1] == pos2[1] && abs(pos1[2] - pos2[2]) == 1) || (pos1[2] == pos2[2] && abs(pos1[1] - pos2[1]) == 1)
 end
-
-function any_box_nearby(agent::robot, model, griddims)
-    radius = griddims[2] / 10
-    for neighbor in nearby_agents(agent, model, radius)
-        if isa(neighbor, box) && neighbor.status == waiting
-            return true
-        end
-    end
-    return false
-end
-
-function return_to_initial_x!(agent::robot, model, griddims)
-    current_x = agent.pos[1]
-    target_x = agent.initial_x
-    if current_x != target_x
-        move_towards!(agent, (target_x, agent.pos[2]), model, griddims)
-    end
-end
-
-function deliver_box_in_front!(Robot::robot, model, Storage::storage)
-    if Robot.carried_box !== nothing
-        delivered_box = Robot.carried_box
-        push!(Storage.boxes, delivered_box)  # Add the box to the storage
-        delivered_box.status = delivered  # Mark the box as delivered
-        Robot.carried_box = nothing  # Clear the robot's carried box
-        Robot.capacity = empty  # Set robot capacity to empty
-    end
-end
-
 
 # Implementación de A* (A-star) sin librerías externas
 function find_path(start_pos, end_pos, obstacles, griddims)
@@ -569,10 +448,10 @@ function move_towards!(agent::robot, target_pos, model, griddims)
 end
 
 # Funciones de paso de agente para Caja y Almacenamiento (sin acción)
-function agent_step!(agent::box, model, griddims)
+function agent_step!(agent::box, model, griddims, box_index_ref::Base.RefValue{Int})
 end
 
-function agent_step!(agent::storage, model, griddims)
+function agent_step!(agent::storage, model, griddims, box_index_ref::Base.RefValue{Int})
 end
 
 # Function to find an agent by its name, limited to box and storage agents
@@ -607,10 +486,14 @@ function calculate_dependencies!(model, packer)
 end
 
 function initialize_model(; griddims=(80, 80), number=80, packer=packer)
-    global assigned_box_index
-    assigned_box_index = 1
+    box_index_ref = Ref(1)  # Índice local para esta simulación
     space = GridSpace(griddims; periodic = false, metric = :manhattan)
-    model = ABM(Union{robot, box, storage}, space; agent_step! = (a, m) -> agent_step!(a, m, griddims), scheduler = Schedulers.fastest)
+    model = ABM(
+    Union{robot, box, storage},
+    space;
+    agent_step! = (agent, model) -> agent_step!(agent, model, griddims, box_index_ref),
+    scheduler = Schedulers.fastest
+    )
 
     all_positions = [(x, y) for x in 1:griddims[1], y in 1:griddims[2]-1]
     shuffled_positions = shuffle(all_positions)
@@ -650,7 +533,7 @@ function initialize_model(; griddims=(80, 80), number=80, packer=packer)
     robot_positions = [(col, bottom_y) for col in robot_columns]
 
     for robot_pos in robot_positions
-        next_box = assign_next_box(packer, model)
+        next_box = assign_next_box(packer, model, box_index_ref)  # Usa índice local
         add_agent!(robot, model; pos = robot_pos, initial_x = robot_pos[1], target_box = next_box)
     end
 
