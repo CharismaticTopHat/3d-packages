@@ -1,234 +1,195 @@
-import { Button, ButtonGroup, SliderField, SwitchField } from '@aws-amplify/ui-react';
-import { useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
+import * as THREE from 'three';
+import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 
-import '@aws-amplify/ui-react/styles.css';
+import './App.css';
 
 function App() {
-  // Estados para parámetros de simulación y visualización
-  const [location, setLocation] = useState("");
-  const [gridSize, setGridSize] = useState(80);  // Tamaño de la cuadrícula
-  const [button, setButton] = useState(false); // Estado para el botón de "Setup"
-  const [simSpeed, setSimSpeed] = useState(2);  // Velocidad de la simulación
-  const [boxes, setBoxes] = useState([]);  // Estado para almacenar las cajas
-  const [robots, setRobots] = useState([]);  // Estado para almacenar los coches
-  const [storages, setStorages] = useState([]);  // Estado para los almacenamientos
-  const [iterations, setIterations] = useState(0);  // Número de iteraciones
-  const [deliveredPerc, setDeliveredPerc] = useState(0);  // Porcentaje de cajas entregadas
-  const [number, setNumber] = useState(40);  // Número de cajas
-  const [sliderGridSize, setSliderGridSize] = useState(80);  // Tamaño de la cuadrícula ajustable
-  const [showGrid, setShowGrid] = useState(false); // Mostrar/ocultar cuadrícula
+  const mountRef = useRef(null);
 
-  const deliveredBoxes = useRef(null);
-  const sizing = 12.5;  // Tamaño base para cálculo de posiciones
-  const running = useRef(null);  // Control del estado de ejecución de la simulación
+  // Estados para simulación
+  const [sliderGridSize, setSliderGridSize] = useState(80); // Tamaño de la cuadrícula
+  const [number, setNumber] = useState(40); // Número de cajas
+  const [simSpeed, setSimSpeed] = useState(2); // Velocidad de simulación
+  const [boxes, setBoxes] = useState([]); // Estado de las cajas
+  const [robots, setRobots] = useState([]); // Estado de los robots
+  const [storages, setStorages] = useState([]); // Estado de los almacenamientos
+  const [location, setLocation] = useState(""); // Ubicación del backend
+  const [iterations, setIterations] = useState(0); // Número de iteraciones
+  const [deliveredPerc, setDeliveredPerc] = useState(0); // Porcentaje de cajas entregadas
+  const [running, setRunning] = useState(false); // Estado de ejecución
 
-  // Mapeo de orientaciones a ángulos de rotación
-  const orientationToAngle = {
-    0: 0,   // Up
-    1: 90,  // Left
-    2: 180, // Down
-    3: 270  // Right
-  };
+  // Referencias para Three.js
+  const sceneRef = useRef(null);
+  const rendererRef = useRef(null);
+  const objects = useRef({ boxes: [], robots: [], storages: [] });
 
-  // Helper function to determine the correct angle rotation with only 90° or 180°
-  function getShortestAngle(currentOrientation, targetOrientation) {
-      if (currentOrientation === 0 && targetOrientation === 1) return 90;   // Up to Left
-      if (currentOrientation === 0 && targetOrientation === 3) return 270;  // Up to Right
-      if (currentOrientation === 0 && targetOrientation === 2) return 180;  // Up to Down
+  useEffect(() => {
+    // Configuración inicial de Three.js
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0xffffff);
 
-      if (currentOrientation === 1 && targetOrientation === 0) return 0;    // Left to Up
-      if (currentOrientation === 1 && targetOrientation === 2) return 180;  // Left to Down
-      if (currentOrientation === 1 && targetOrientation === 3) return 270;  // Left to Right
+    const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1010);
+    camera.position.set(sliderGridSize * 5, sliderGridSize * 2, sliderGridSize * 5);
 
-      if (currentOrientation === 2 && targetOrientation === 1) return 90;   // Down to Left
-      if (currentOrientation === 2 && targetOrientation === 3) return 270;  // Down to Right
-      if (currentOrientation === 2 && targetOrientation === 0) return 0;    // Down to Up
+    const renderer = new THREE.WebGLRenderer();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    mountRef.current.appendChild(renderer.domElement);
 
-      if (currentOrientation === 3 && targetOrientation === 0) return 0;    // Right to Up
-      if (currentOrientation === 3 && targetOrientation === 2) return 180;  // Right to Down
-      if (currentOrientation === 3 && targetOrientation === 1) return 90;   // Right to Left
+    const controls = new OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
 
-      // Default to target angle if no rotation needed
-      return orientationToAngle[targetOrientation];
-  }
+    // Agregar cuadrícula
+    // Calcular tamaño del grid y divisiones
+    const gridSize = sliderGridSize * 5; // Tamaño total del grid basado en el tamaño de las celdas
+    const divisions = sliderGridSize; // Una división por cada celda
 
-  // Configuración inicial de la simulación
+    // Crear y posicionar el grid
+    const gridHelper = new THREE.GridHelper(gridSize, divisions);
+    gridHelper.position.set(gridSize / 2 - 2.5, 0, gridSize / 2 + 2.5); // Centrar el grid
+    scene.add(gridHelper);
+
+    // Luces
+    const ambientLight = new THREE.AmbientLight(0x404040);
+    const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
+    directionalLight.position.set(sliderGridSize * 5, sliderGridSize * 10, sliderGridSize * 5);
+    scene.add(ambientLight, directionalLight);
+
+    // Guardar referencias
+    sceneRef.current = scene;
+    rendererRef.current = renderer;
+
+    const animate = () => {
+      requestAnimationFrame(animate);
+      controls.update();
+      renderer.render(scene, camera);
+    };
+    animate();
+
+    return () => {
+      mountRef.current.removeChild(renderer.domElement);
+    };
+  }, [sliderGridSize]);
+
   const setup = () => {
-    setGridSize(sliderGridSize);
     fetch("http://localhost:8000/simulations", {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ 
-        dim: [sliderGridSize, sliderGridSize],
-        number: number,
-      })
-    }).then(resp => resp.json())
-    .then(data => {
-      setLocation(data["Location"]);  // Almacena la ubicación de la simulación en el backend
-      setBoxes(data["boxes"]);
-      setRobots(data["robots"]);
-      setStorages(data["storages"]);
-      setIterations(0);
-      setDeliveredPerc(0);
+      body: JSON.stringify({ dim: [sliderGridSize, sliderGridSize], number }),
+    })
+      .then((response) => response.json())
+      .then((data) => {
+        setLocation(data.Location);
+        setBoxes(data.boxes);
+        setRobots(data.robots);
+        setStorages(data.storages);
+        setIterations(0);
+        setDeliveredPerc(0);
+        initializeScene(data);
+      });
+  };
+
+  const handleStart = () => {
+    if (!location) return;
+
+    setRunning(true);
+    const interval = setInterval(() => {
+      fetch(`http://localhost:8000${location}`)
+        .then((response) => response.json())
+        .then((data) => {
+          setBoxes(data.boxes);
+          setRobots(data.robots);
+          setStorages(data.storages);
+          updateScene(data);
+
+          const delivered = data.boxes.filter((b) => b.status === "delivered").length;
+          setDeliveredPerc((delivered / number) * 100);
+          setIterations((prev) => prev + 1);
+
+          const movingRobots = data.robots.filter((r) => r.stopped !== "moving").length;
+          if (movingRobots === 0) {
+            handleStop();
+          }
+        });
+    }, 300 / simSpeed);
+
+    return () => clearInterval(interval);
+  };
+
+  const handleStop = () => {
+    setRunning(false);
+  };
+
+  const initializeScene = (data) => {
+    const { boxes, robots, storages } = objects.current;
+    const scene = sceneRef.current;
+
+    // Limpiar objetos existentes
+    boxes.forEach((box) => scene.remove(box));
+    robots.forEach((robot) => scene.remove(robot));
+    storages.forEach((storage) => scene.remove(storage));
+
+    objects.current.boxes = data.boxes.map((box) => {
+      const geometry = new THREE.BoxGeometry(5, 5, 5);
+      const material = new THREE.MeshStandardMaterial({ color: 0xff0000 });
+      const mesh = new THREE.Mesh(geometry, material);
+      mesh.position.set(box.pos[0] * 5, 2.5, box.pos[1] * 5);
+      scene.add(mesh);
+      return mesh;
+    });
+
+    objects.current.robots = data.robots.map((robot) => {
+      const geometry = new THREE.BoxGeometry(5, 5, 5);
+      const material = new THREE.MeshStandardMaterial({ color: 0x0000ff });
+      const mesh = new THREE.Mesh(geometry, material);
+      mesh.position.set(robot.pos[0] * 5, 2.5, robot.pos[1] * 5);
+      scene.add(mesh);
+      return mesh;
+    });
+
+    objects.current.storages = data.storages.map((storage) => {
+      const geometry = new THREE.BoxGeometry(10, 10, 10);
+      const material = new THREE.MeshStandardMaterial({ color: 0x00ff00 });
+      const mesh = new THREE.Mesh(geometry, material);
+      mesh.position.set(storage.pos[0] * 5, 2.5, storage.pos[1] * 5);
+      scene.add(mesh);
+      return mesh;
     });
   };
 
-  // Iniciar la simulación
-  const handleStart = () => {
-    deliveredBoxes.current = [];
-    setButton(true);
-    running.current = setInterval(() => {
-      fetch("http://localhost:8000" + location)
-      .then(res => res.json())
-      .then(data => {
-        let delivered = data["boxes"].filter(b => b.status === "delivered").length;  // Filtra cajas entregadas
-        let stopRobots = data["robots"].filter(r => r.stopped === "moving").length;  // Filtra coches en movimiento
-        deliveredBoxes.current.push(delivered);
-        // Si no hay coches en movimiento, detiene la simulación
-        if (stopRobots === 0) {
-          handleStop();  // Detiene el intervalo y restablece el estado del botón
-          return;
-        }
-        setBoxes(data["boxes"]);
-        setRobots(data["robots"]);
-        setStorages(data["storages"]);
-        setIterations(prev => prev + 1);  // Incrementa las iteraciones
-        setDeliveredPerc((number - delivered));  // Calcula el porcentaje de cajas no entregadas
-      });
-    }, 300 / simSpeed);
-  };
+  const updateScene = (data) => {
+    const { boxes, robots, storages } = objects.current;
 
-  // Detener la simulación
-  const handleStop = () => {
-    setButton(false);
-    clearInterval(running.current);
+    data.boxes.forEach((box, i) => {
+      boxes[i].position.set(box.pos[0] * 5, 2.5, box.pos[1] * 5);
+    });
+
+    data.robots.forEach((robot, i) => {
+      robots[i].position.set(robot.pos[0] * 5, 2.5, robot.pos[1] * 5);
+    });
+
+    data.storages.forEach((storage, i) => {
+      storages[i].position.set(storage.pos[0] * 5, 5, storage.pos[1] * 5);
+    });
   };
 
   return (
     <>
       <style>
-          {`
-            .robot-image {
-                transition: transform 0.2s ease-in-out, x 0.2s ease-in-out, y 0.2s ease-in-out;
-            }
-          `}
+        {`
+          .controls {
+            margin: 20px;
+          }
+        `}
       </style>
-      <ButtonGroup variation="primary">
-        <Button onClick={setup} isDisabled={button}>Setup</Button>
-        <Button onClick={handleStart} isDisabled={button}>Start</Button>
-        <Button onClick={handleStop} isDisabled={!button}>Stop</Button>
-      </ButtonGroup>
-
-      {/* Controles de la simulación */}
-      <SliderField label="Tamaño del Mapa" min={40} max={80} step={10}
-        value={sliderGridSize} onChange={setSliderGridSize} isDisabled={button} />
-      <SliderField label="Velocidad de Simulación" min={1} max={10}
-        value={simSpeed} onChange={setSimSpeed} isDisabled={button} />
-      <SliderField label="Número de Cajas" min={10} max={100} step={10}
-        value={number} onChange={setNumber} isDisabled={button} />
-
-      {/* Mostrar/ocultar cuadrícula */}
-      <SwitchField label="Mostrar Cuadrícula" 
-        checked={showGrid} onChange={(e) => setShowGrid(e.target.checked)} />
-
-      <p>Iteraciones: {iterations}</p> 
-      <p>Cajas Faltantes de Entrega: {deliveredPerc}</p>
-      
-      <svg width={sizing * sliderGridSize} height={sizing * sliderGridSize} xmlns="http://www.w3.org/2000/svg" style={{backgroundColor:"white"}}>
-        {
-          // Renderizado condicional de líneas horizontales y verticales para la cuadrícula
-          showGrid && (
-            <>
-              {
-                Array.from({ length: sliderGridSize + 1 }).map((_, i) => (
-                  <line
-                    key={`h-line-${i}`}
-                    x1={0}
-                    y1={i * sizing}
-                    x2={sizing * sliderGridSize}
-                    y2={i * sizing}
-                    stroke="black"
-                    strokeWidth="0.5"
-                  />
-                ))
-              }
-              {
-                Array.from({ length: sliderGridSize + 1 }).map((_, i) => (
-                  <line
-                    key={`v-line-${i}`}
-                    x1={i * sizing}
-                    y1={0}
-                    x2={i * sizing}
-                    y2={sizing * sliderGridSize}
-                    stroke="black"
-                    strokeWidth="0.5"
-                  />
-                ))
-              }
-            </>
-          )
-        }
-        {
-          // Renderiza cajas en la cuadrícula
-          boxes.map(box => (
-            <image
-              key={box.id}
-              x={(box.pos[0] - 1) * sizing}
-              y={(box.pos[1] - 1) * sizing}
-              width={sizing}  
-              height={sizing} 
-              className="robot-image"
-              href={"./caja.png"}  // Ruta de la imagen de la caja
-            />
-          ))
-        }
-        {
-          // Renderiza coches en la cuadrícula
-          robots.map(robot => {
-            // Inicializa la orientación previa
-            if (robot.previousOrientation === undefined) {
-                robot.previousOrientation = robot.orientation;
-            }
-
-            // Calcula el ángulo de rotación dependiendo del ángulo anterior
-            const angle = getShortestAngle(robot.previousOrientation, robot.orientation);
-
-            // Guarda el ángulo.
-            robot.previousOrientation = robot.orientation;
-
-            const xPos = (robot.pos[0] - 1) * sizing;
-            const yPos = (robot.pos[1] - 1) * sizing;
-            const centerX = xPos + sizing / 2;
-            const centerY = yPos + sizing / 2;
-
-            return (
-              <image
-                key={robot.id}
-                x={xPos}
-                y={yPos}
-                width={sizing}
-                height={sizing}
-                href={"./robot.png"}
-                className="robot-image"
-                transform={`rotate(${angle}, ${centerX}, ${centerY})`}
-              />
-            );
-          })
-        }
-        {
-          // Renderiza almacenamientos en la cuadrícula con imágenes basadas en la cantidad de cajas
-          storages.map(storage => (
-            <image
-              key={storage.id}
-              x={(storage.pos[0] - 1) * sizing}
-              y={(storage.pos[1] - 1) * sizing}
-              width={sizing}
-              height={sizing}
-              href={storage.boxes <= "0" ? "./0.png" : storage.boxes <= "1" ? "./1.png" : storage.boxes <= "2" ? "./2.png" : storage.boxes <= "3" ? "./3.png" : storage.boxes <= "4" ? "./4.png" : "./5.png" }  // Ruta de la imagen de almacenamiento según cajas
-            />
-          ))
-        }
-      </svg>
+      <div ref={mountRef} style={{ width: '100vw', height: '80vh' }}></div>
+      <div className="controls">
+        <button onClick={setup} disabled={running}>Setup</button>
+        <button onClick={handleStart} disabled={running}>Start</button>
+        <button onClick={handleStop} disabled={!running}>Stop</button>
+        <p>Iteraciones: {iterations}</p>
+        <p>Porcentaje entregado: {deliveredPerc}%</p>
+      </div>
     </>
   );
 }
