@@ -11,7 +11,7 @@ Item = pyimport("py3dbp").Item
 
 packer = Packer()
 
-packer.add_bin(Bin("large-2-box", 10.6875, 5.75, 10.0, 70.0))
+packer.add_bin(Bin("large-2-box", 146, 40, 26, 70.0))
 
 packer.add_item(Item("50g [powder 1]", 3.9370, 1.9685, 1.9685, 1.0))
 packer.add_item(Item("50g [powder 2]", 3.9370, 1.9685, 1.9685, 1.0))
