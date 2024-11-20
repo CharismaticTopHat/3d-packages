@@ -12,7 +12,8 @@ import random
 import sys
 sys.path.append('..')
 from Lifter import Lifter
-from Basura import Basura
+from Package import Package
+from Trailer import Trailer
 
 screen_width = 500
 screen_height = 500
@@ -39,7 +40,7 @@ Y_MAX=500
 Z_MIN=-500
 Z_MAX=500
 #Dimension del plano
-DimBoard = 200
+DimBoard = 300
 
 
 #lifters
@@ -47,7 +48,7 @@ lifters = []
 nlifters = 5
 
 basuras = []
-nbasuras = random.randint(10, 20)
+npackages = random.randint(-10, 20)
 
 # Variables para el control del observador
 theta = 0.0
@@ -55,7 +56,7 @@ radius = 300
 
 # Arreglo para el manejo de texturas
 textures = []
-filenames = ["Plataformas/bars.jpg","Plataformas/wheel.jpeg", "Plataformas/machine.jpg","Plataformas/Cardboard.svg", "Plataformas/Wall.jpg", "Plataformas/TrailerWall.svg"]
+filenames = ["Plataformas/bars.jpg","Plataformas/wheel.jpeg", "Plataformas/machine.jpg","Plataformas/Cardboard.svg", "Plataformas/Wall.jpg", "Plataformas/TrailerWall.svg", "Plataformas/Ceiling.jpg"]
 
 def Axis():
     glShadeModel(GL_FLAT)
@@ -117,8 +118,8 @@ def Init():
     for i in range(nlifters):
         lifters.append(Lifter(DimBoard, 0.7, textures))
         
-    for i in range(nbasuras):
-        basuras.append(Basura(DimBoard,1,textures,3))
+    for i in range(npackages):
+        basuras.append(Package(DimBoard,1,textures,3))
         
 def planoText():
     # activate textures
@@ -151,6 +152,7 @@ def checkCollisions():
                     b.alive = False
                     c.status = 1
                 #print("Colision detectada")
+                
 
 def display():
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
@@ -160,69 +162,14 @@ def display():
         obj.draw()
         obj.update()    
 
-    # Se dibuja el incinerador
-    glColor3f(1.0, 0.5, 0.0)  # Color: Naranja
-    square_size = 100.0  # Tamaño de ancho y largo
-    fixed_height = 30.0  # Altura fija del cubo
-
-    # Vértices del prisma
-    base_x = square_size  # Ancho del prisma en X
-    base_z = square_size  # Largo del prisma en Z
-    height_y = fixed_height  # Altura fija del prisma en Y
-
-    # Vértice fijo en (0, 0, square_size) — ahora será el vértice inferior trasero izquierdo
-    fixed_vertex = (0, 0, base_z)
-
-    # Vértices calculados según el tamaño
-    vertices = [
-        fixed_vertex,  # (0, 0, Z+), vértice inferior trasero izquierdo (fijo)
-        (base_x, 0, base_z),  # (X+, 0, Z+), vértice inferior trasero derecho
-        (base_x, 0, 0),  # (X+, 0, 0), vértice inferior delantero derecho
-        (0, 0, 0),  # (0, 0, 0), vértice inferior delantero izquierdo
-        (0, height_y, base_z),  # (0, Y+, Z+), vértice superior trasero izquierdo
-        (base_x, height_y, base_z),  # (X+, Y+, Z+), vértice superior trasero derecho
-        (base_x, height_y, 0),  # (X+, Y+, 0), vértice superior delantero derecho
-        (0, height_y, 0),  # (0, Y+, 0), vértice superior delantero izquierdo
-    ]
-
-    # Dibujar caras del prisma
-    faces = [
-            # Cara inferior
-            [vertices[3], vertices[2], vertices[1], vertices[0]],
-            # Cara superior
-            #[vertices[4], vertices[5], vertices[6], vertices[7]],
-            # Cara frontal
-            #[vertices[7], vertices[6], vertices[2], vertices[3]],
-            # Cara trasera
-            [vertices[4], vertices[5], vertices[1], vertices[0]],
-            # Cara izquierda
-            #[vertices[4], vertices[7], vertices[3], vertices[0]],
-            # Cara derecha
-            [vertices[5], vertices[6], vertices[2], vertices[1]],
-        ]
-
-    # Dibujar cada cara del prisma
-    for i, face in enumerate(faces):
-        glBegin(GL_QUADS)
-        
-        # Establecer el color de la cara según su índice
-        if i == 2:  # Cara derecha
-            glColor3f(0.0, 0.0, 1.0)  # Azul
-        elif i == 1:  # Cara delantera
-            glColor3f(0.0, 1.0, 0.0)  # Verde
-        else:
-            glColor3f(1.0, 0.5, 0.0)  # Naranja para otras caras
-        
-        # Dibujar los vértices de la cara
-        for vertex in face:
-            glVertex3d(*vertex)
-        glEnd()
+    trailer = Trailer(textures[5])
+    trailer.draw()
     
     # Se dibujan basuras
     for obj in basuras:
         obj.draw()
 
-    # Dibujar el plano gris
+    # Dibujar Plano Inferior
     planoText()
     glColor3f(0.3, 0.3, 0.3)
     glBegin(GL_QUADS)
@@ -232,8 +179,22 @@ def display():
     glVertex3d(DimBoard, 0, -DimBoard)
     glEnd()
     
-    # Draw the walls bounding the plane
-    wall_height = 50.0  # Adjust the wall height as needed
+    wall_height = 200.0  # Altura de Paredes
+    
+    #Dibujar Plano Superior
+    glEnable(GL_TEXTURE_2D)
+    glBindTexture(GL_TEXTURE_2D, textures[6])
+    glBegin(GL_QUADS)
+    glTexCoord2f(0.0, 0.0)
+    glVertex3d(-DimBoard, wall_height, -DimBoard)
+    glTexCoord2f(0.0, 1.0)
+    glVertex3d(-DimBoard, wall_height, DimBoard)
+    glTexCoord2f(1.0, 1.0)
+    glVertex3d(DimBoard, wall_height, DimBoard)
+    glTexCoord2f(1.0, 0.0)
+    glVertex3d(DimBoard, wall_height, -DimBoard)
+    glEnd()
+    glDisable(GL_TEXTURE_2D)
     
     glColor3f(0.8, 0.8, 0.8)  # Light gray color for walls
     
