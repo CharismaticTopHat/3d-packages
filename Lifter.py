@@ -15,8 +15,12 @@ class Lifter:
     def __init__(self, dim, vel, textures):
         self.dim = dim
         # Se inicializa una posicion aleatoria en el tablero
-        # self.Position = [random.randint(-dim, dim), 6, random.randint(-dim, dim)]
-        self.Position = [0, 6, 0]
+        self.Position = [
+            random.randint(-dim, -75),  # Posición en X
+            2,                          # Posición en Y
+            random.randint(75, dim)   # Posición en Z
+        ]
+        #self.Position = [0, 6, 0]
         # Inicializar las coordenadas (x,y,z) del cubo en el tablero
         # almacenandolas en el vector Position
 

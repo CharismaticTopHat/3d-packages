@@ -302,5 +302,5 @@ while not done:
 
     display()
     pygame.display.flip()
-    pygame.time.wait(10)
+    pygame.time.wait(100)
 pygame.quit()

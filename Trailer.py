@@ -11,7 +11,6 @@ import math
 
 class Trailer:
     def __init__(self, textures):
-        # Existing initialization
         self.radius = 100
         self.points = [
             (0, 0, 100), (100, 0, 100), (100, 0, 0), (0, 0, 0),
