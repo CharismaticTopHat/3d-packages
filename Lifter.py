@@ -61,7 +61,7 @@ class Lifter:
         magnitude = math.sqrt(dirX**2 + dirZ**2)
         self.Direction = [(dirX / magnitude), 0, (dirZ / magnitude)]
 
-    def targetCenter(self):
+    def targetTrailer(self):
         # Set direction to center
         dirX = -self.Position[0]
         dirZ = -self.Position[2]
@@ -72,7 +72,7 @@ class Lifter:
         if self.status == 1:
             delta = 0.01
             if self.platformHeight >= 0:
-                self.targetCenter()
+                self.targetTrailer()
                 self.status = 2
             else:
                 self.platformHeight += delta

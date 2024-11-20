@@ -48,7 +48,7 @@ lifters = []
 nlifters = 5
 
 basuras = []
-npackages = random.randint(10, 20)
+npackages = random.randint(10, 50)
 
 # Variables para el control del observador
 theta = 0.0
@@ -302,5 +302,5 @@ while not done:
 
     display()
     pygame.display.flip()
-    pygame.time.wait(100)
+    pygame.time.wait(10)
 pygame.quit()
