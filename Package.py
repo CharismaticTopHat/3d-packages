@@ -37,14 +37,14 @@ class Package:
                       [5.0, 5.0, 5.0]]
         self.size = self.possibleSizes[random.randint(0, len(self.possibleSizes) - 1)]
         self.vertexCoords = [
-                    self.size[0], self.size[1], self.size[2],    # Vertex 1
-                    self.size[0], self.size[1], -self.size[2],   # Vertex 2
-                    self.size[0], -self.size[1], -self.size[2],  # Vertex 3
-                    self.size[0], -self.size[1], self.size[2],   # Vertex 4
-                    -self.size[0], self.size[1], self.size[2],   # Vertex 5
-                    -self.size[0], self.size[1], -self.size[2],  # Vertex 6
-                    -self.size[0], -self.size[1], -self.size[2], # Vertex 7
-                    -self.size[0], -self.size[1], self.size[2],  # Vertex 8
+                    (0, 1, self.size[2]),
+                    (self.size[0], 1, self.size[2]),
+                    (self.size[0], 1, 0),
+                    (0, 0, 0),
+                    (0, self.size[1], self.size[2]),
+                    (self.size[0], self.size[1], self.size[2]),
+                    (self.size[0], self.size[1], 0),
+                    (0, self.size[1], 0)
                 ]
 
         self.elementArray = [0,1,2,3,0,3,7,4,0,4,5,1,6,2,1,5,6,5,4,7,6,7,3,2,]
@@ -55,7 +55,7 @@ class Package:
         # Se inicializa una posicion aleatoria en el tablero
         self.Position = [
             random.randint(-dim, -75),  # Posición en X
-            2,                          # Posición en Y
+            1,                          # Posición en Y
             random.randint(-dim, -75)   # Posición en Z
         ]
         # Inicializar las coordenadas (x,y,z) del cubo en el tablero
@@ -111,18 +111,22 @@ class Package:
             glEnable(GL_TEXTURE_2D)
             glBindTexture(GL_TEXTURE_2D, self.textures[self.txtIndex])
 
-            glBegin(GL_QUADS)
-            
-            # Front face
-            glTexCoord2f(0.0, 0.0); glVertex3f(*self.vertexCoords[0:3])
-            glTexCoord2f(1.0, 0.0); glVertex3f(*self.vertexCoords[3:6])
-            glTexCoord2f(1.0, 1.0); glVertex3f(*self.vertexCoords[6:9])
-            glTexCoord2f(0.0, 1.0); glVertex3f(*self.vertexCoords[9:12])
-            
-            # Repeat similar logic for other faces using self.vertexCoords
-            # Use appropriate indices to match the faces (back, left, right, top, bottom)
+            faces = [
+                [0, 1, 2, 3],  # Cara inferior
+                [4, 5, 6, 7],  # Cara superior
+                [0, 1, 5, 4],  # Cara frontal
+                [2, 3, 7, 6],  # Cara trasera
+                [1, 2, 6, 5],  # Cara derecha
+                [0, 3, 7, 4],  # Cara izquierda
+            ]
 
+            glBegin(GL_QUADS)
+            for face in faces:
+                for vertex in face:
+                    glTexCoord2f(0.0, 0.0)  # Adjust if needed
+                    glVertex3f(*self.vertexCoords[vertex])
             glEnd()
+
             glDisable(GL_TEXTURE_2D)
 
             glPopMatrix()
