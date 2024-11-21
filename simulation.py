@@ -48,7 +48,7 @@ lifters = []
 nlifters = 5
 
 basuras = []
-npackages = random.randint(-10, 20)
+npackages = random.randint(10, 20)
 
 # Variables para el control del observador
 theta = 0.0
@@ -99,7 +99,7 @@ def Texturas(filepath):
 def Init():
     screen = pygame.display.set_mode(
         (screen_width, screen_height), DOUBLEBUF | OPENGL)
-    pygame.display.set_caption("OpenGL: cubos")
+    pygame.display.set_caption("OpenGL: Packages")
 
     glMatrixMode(GL_PROJECTION)
     glLoadIdentity()
@@ -169,14 +169,23 @@ def display():
     for obj in basuras:
         obj.draw()
 
+    # Área de Cajas
+    glColor3f(1.0, 1.0, 0.0)
+    glBegin(GL_QUADS)
+    glVertex3d(-DimBoard, 1, -DimBoard) # -300, 1, -300
+    glVertex3d(-DimBoard, 1, -DimBoard+DimBoard-50) # -300, 1, -50
+    glVertex3d(-DimBoard+DimBoard-50, 1, -DimBoard+DimBoard-50) # -50, 1, -50
+    glVertex3d(-DimBoard+DimBoard-50, 1, -DimBoard) # -50, 1, -300
+    glEnd()
+
     # Dibujar Plano Inferior
     planoText()
     glColor3f(0.3, 0.3, 0.3)
     glBegin(GL_QUADS)
-    glVertex3d(-DimBoard, 0, -DimBoard)
-    glVertex3d(-DimBoard, 0, DimBoard)
-    glVertex3d(DimBoard, 0, DimBoard)
-    glVertex3d(DimBoard, 0, -DimBoard)
+    glVertex3d(-DimBoard, -1, -DimBoard)
+    glVertex3d(-DimBoard, -1, DimBoard)
+    glVertex3d(DimBoard, -1, DimBoard)
+    glVertex3d(DimBoard, -1, -DimBoard)
     glEnd()
     
     wall_height = 200.0  # Altura de Paredes
@@ -293,5 +302,5 @@ while not done:
 
     display()
     pygame.display.flip()
-    pygame.time.wait(10)
+    pygame.time.wait(100)
 pygame.quit()
