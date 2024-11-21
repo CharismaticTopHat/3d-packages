@@ -47,7 +47,7 @@ lifters = []
 nlifters = 5
 
 basuras = []
-nbasuras = random.randint(10, 20)
+nbasuras = random.randint(-10, 20)
 
 # Variables para el control del observador
 theta = 0.0
