@@ -5,6 +5,7 @@ from pygame.locals import *
 from OpenGL.GL import *
 from OpenGL.GLU import *
 from OpenGL.GLUT import *
+from objloader import *
 
 import math
 import random
@@ -53,6 +54,8 @@ npackages = random.randint(10, 50)
 # Variables para el control del observador
 theta = 0.0
 radius = 300
+
+trailer = []
 
 # Arreglo para el manejo de texturas
 textures = []
@@ -121,6 +124,9 @@ def Init():
     for i in range(npackages):
         basuras.append(Package(DimBoard,1,textures,3))
         
+    trailer.append(OBJ("truck.obj", swapyz=True))
+    trailer[0].generate()
+        
 def planoText():
     # activate textures
     glColor(1.0, 1.0, 1.0)
@@ -162,8 +168,8 @@ def display():
         obj.draw()
         obj.update()    
 
-    trailer = Trailer(textures)
-    trailer.draw()
+    #trailer = Trailer(textures)
+    #trailer.draw()
     
     # Se dibujan basuras
     for obj in basuras:
@@ -300,6 +306,16 @@ def display():
     glDisable(GL_TEXTURE_2D)
 
     checkCollisions()
+    
+    glPushMatrix()  
+    #correcciones para dibujar el objeto en plano XZ
+    #esto depende de cada objeto
+    glRotatef(-90.0, 1.0, 0.0, 0.0)
+    glRotatef(-90.0, 0.0, 0.0, 1.0)
+    glTranslatef(0.0, 200.0, 25.0)
+    glScalef(50.0,50.0,50.0)
+    trailer[0].render()  
+    glPopMatrix()
     
 def lookAt():
     glLoadIdentity()
