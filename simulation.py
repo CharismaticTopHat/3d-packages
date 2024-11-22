@@ -169,13 +169,38 @@ def display():
     for obj in basuras:
         obj.draw()
 
+    # Área de Montacargas
+    glColor3f(1.0, 0.75, 0.0)
+    glBegin(GL_QUADS)
+    glVertex3d(-DimBoard, 2, 75)  
+    glVertex3d(-75, 2, 75)   
+    glVertex3d(-75, 2, DimBoard)  
+    glVertex3d(-DimBoard, 2, DimBoard)
+    glEnd()
+
     # Área de Cajas
     glColor3f(1.0, 1.0, 0.0)
     glBegin(GL_QUADS)
-    glVertex3d(-DimBoard, 1, -DimBoard) # -300, 1, -300
-    glVertex3d(-DimBoard, 1, -DimBoard+DimBoard-50) # -300, 1, -50
-    glVertex3d(-DimBoard+DimBoard-50, 1, -DimBoard+DimBoard-50) # -50, 1, -50
-    glVertex3d(-DimBoard+DimBoard-50, 1, -DimBoard) # -50, 1, -300
+    glVertex3d(-DimBoard, 2, -DimBoard)
+    glVertex3d(-75, 2, -DimBoard)
+    glVertex3d(-75, 2, -DimBoard + (DimBoard - 75))
+    glVertex3d(-DimBoard, 2, -DimBoard + (DimBoard - 75))
+    glEnd()
+
+    #Área de Ruta
+    glColor3f(0.0, 1.0, 0.0) 
+    glBegin(GL_QUADS)
+    glVertex3d(-DimBoard, 1, DimBoard)          
+    glVertex3d(-75, 1, DimBoard)                 
+    glVertex3d(-75, 1, -DimBoard)          
+    glVertex3d(-DimBoard, 1, -DimBoard)    
+    glEnd()
+    glColor3f(1.0, 0.0, 0.0) 
+    glBegin(GL_QUADS)
+    glVertex3d(0, 1, 26)          
+    glVertex3d(-75, 1, 26)                 
+    glVertex3d(-75, 1, 0)          
+    glVertex3d(0, 1, 0)    
     glEnd()
 
     # Dibujar Plano Inferior

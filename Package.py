@@ -15,26 +15,32 @@ import math
 4)7.8740, 5.9055, 2.9528
 5)5.5118, 2.7559, 2.7559
 6)4.9213, 3.9370, 1.9685
-7)7.4803, 3.9370, 2.5434
-8)6.6929, 5.9055, 1.9685
-9)8.0000, 4.0000, 2.0000
-10)7.2835, 3.6418, 3.2087
+7)4.9370, 0.19685, 4.9685
+8)4.8740, 4.9370, 4.9685
+9)7.9370, 0.39685, 5.9685
+10)14.9370, 13.9685, 10.9685
+
+4.9370, 0.19685, 4.9685
+4.8740, 4.9370, 4.9685
+7.9370, 0.39685, 5.9685
+14.9370, 13.9685, 10.9685
 """
 
 class Package:
     def __init__(self, dim, vel, textures, txtIndex):
         # Se inicializa las coordenadas de los vertices del cubo
-        self.possibleSizes = [[3.9370, 1.9685, 1.9685],
+        self.possibleSizes = [
+                      [3.9370, 1.9685, 1.9685],
                       [7.8740, 3.9370, 1.9685],
                       [6.2992, 3.9370, 1.5748],
                       [7.8740, 5.9055, 2.9528],
                       [5.5118, 2.7559, 2.7559],
                       [4.9213, 3.9370, 1.9685],
                       [7.4803, 3.9370, 2.5434],
-                      [6.6929, 5.9055, 1.9685],
-                      [8.0000, 4.0000, 2.0000],
-                      [7.2835, 3.6418, 3.2087],
-                      [5.0, 5.0, 5.0]]
+                      [4.9370, 0.19685, 4.9685],
+                      [4.8740, 4.9370, 4.9685],
+                      [7.9370, 0.39685, 5.9685],
+                      [14.9370, 13.9685, 10.9685]]
         self.size = self.possibleSizes[random.randint(0, len(self.possibleSizes) - 1)]
         self.vertexCoords = [
                     (0, 1, self.size[2]),
@@ -55,8 +61,8 @@ class Package:
         # Se inicializa una posicion aleatoria en el tablero
         self.Position = [
             random.randint(-dim, -75),  # Posición en X
-            1,                          # Posición en Y
-            random.randint(-dim, -75)   # Posición en Z
+            3,                          # Posición en Y
+            random.randint(-dim, -dim+(dim-75))   # Posición en Z
         ]
         # Inicializar las coordenadas (x,y,z) del cubo en el tablero
         # almacenandolas en el vector Position

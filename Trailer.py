@@ -31,7 +31,7 @@ class Trailer:
             # Cara superior
             [self.points[4], self.points[5], self.points[6], self.points[7]],
             # Cara frontal
-            [self.points[7], self.points[6], self.points[2], self.points[3]],
+            #[self.points[7], self.points[6], self.points[2], self.points[3]],
             # Cara trasera
             #[self.points[4], self.points[5], self.points[1], self.points[0]],
             # Cara izquierda
