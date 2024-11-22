@@ -162,7 +162,7 @@ def display():
         obj.draw()
         obj.update()    
 
-    trailer = Trailer(textures[5])
+    trailer = Trailer(textures)
     trailer.draw()
     
     # Se dibujan basuras
