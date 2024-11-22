@@ -17,8 +17,8 @@ class Lifter:
         # Se inicializa una posicion aleatoria en el tablero
         self.Position = [
             random.randint(-dim, -75),  # Posición en X
-            2,                          # Posición en Y
-            random.randint(75, dim)   # Posición en Z
+            10,                         # Posición en Y
+            dim-10                      # Posición en Z
         ]
         #self.Position = [0, 6, 0]
         # Inicializar las coordenadas (x,y,z) del cubo en el tablero
@@ -61,7 +61,7 @@ class Lifter:
         magnitude = math.sqrt(dirX**2 + dirZ**2)
         self.Direction = [(dirX / magnitude), 0, (dirZ / magnitude)]
 
-    def targetCenter(self):
+    def targetTrailer(self):
         # Set direction to center
         dirX = -self.Position[0]
         dirZ = -self.Position[2]
@@ -72,7 +72,7 @@ class Lifter:
         if self.status == 1:
             delta = 0.01
             if self.platformHeight >= 0:
-                self.targetCenter()
+                self.targetTrailer()
                 self.status = 2
             else:
                 self.platformHeight += delta
@@ -82,14 +82,22 @@ class Lifter:
             else:
                 newX = self.Position[0] + self.Direction[0] * self.vel
                 newZ = self.Position[2] + self.Direction[2] * self.vel
-                if newX - 10 < -self.dim or newX + 10 > self.dim:
+                
+                # Límite en X
+                if newX - 10 < -self.dim or newX + 10 > -75:
                     self.Direction[0] *= -1
                 else:
                     self.Position[0] = newX
+                
+                # Límite en Z
                 if newZ - 10 < -self.dim or newZ + 10 > self.dim:
+                    self.Direction[2] *= -1
+                # Área Roja
+                elif newZ + 10 > 26 and self.Position[0] <= -75 and self.Position[0] >= -75:
                     self.Direction[2] *= -1
                 else:
                     self.Position[2] = newZ
+
                 self.angle = math.acos(self.Direction[0]) * 180 / math.pi
                 if self.Direction[2] > 0:
                     self.angle = 360 - self.angle
@@ -97,30 +105,38 @@ class Lifter:
             delta = 0.01
             if self.platformHeight <= -1.5:
                 self.status = 4
-                #print("Estatus 4")
             else:
                 self.platformHeight -= delta
         elif self.status == 4:
             if (self.Position[0] <= 20 and self.Position[0] >= -20) and (self.Position[2] <= 20 and self.Position[2] >= -20):
-                self.Position[0] -= (self.Direction[0] * (self.vel/4))
-                self.Position[2] -= (self.Direction[2] * (self.vel/4))
+                self.Position[0] -= (self.Direction[0] * (self.vel / 4))
+                self.Position[2] -= (self.Direction[2] * (self.vel / 4))
             else:
                 self.search()
                 self.status = 0
         else:
             # Update position
-            if random.randint(1,1000) == 69:
+            if random.randint(1, 1000) == 69:
                 self.search()
+            
             newX = self.Position[0] + self.Direction[0] * self.vel
             newZ = self.Position[2] + self.Direction[2] * self.vel
-            if newX - 10 < -self.dim or newX + 10 > self.dim:
+            
+            # Límite en X
+            if newX - 10 < -self.dim or newX + 10 > -75:
                 self.Direction[0] *= -1
             else:
                 self.Position[0] = newX
+            
+            # Límite en Z
             if newZ - 10 < -self.dim or newZ + 10 > self.dim:
+                self.Direction[2] *= -1
+            # Área roja
+            elif newZ + 10 > 26 and self.Position[0] <= -75 and self.Position[0] >= -75:
                 self.Direction[2] *= -1
             else:
                 self.Position[2] = newZ
+            
             self.angle = math.acos(self.Direction[0]) * 180 / math.pi
             if self.Direction[2] > 0:
                 self.angle = 360 - self.angle
@@ -137,6 +153,8 @@ class Lifter:
                     self.platformUp = True
                 else:
                     self.platformHeight -= delta
+
+
 
     def draw(self):
         glPushMatrix()
