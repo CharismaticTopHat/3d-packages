@@ -83,18 +83,21 @@ class Lifter:
                 newX = self.Position[0] + self.Direction[0] * self.vel
                 newZ = self.Position[2] + self.Direction[2] * self.vel
                 
-                # Ensure newX stays within the horizontal bounds: [-DimBoard, -75]
+                # Límite en X
                 if newX - 10 < -self.dim or newX + 10 > -75:
                     self.Direction[0] *= -1
                 else:
                     self.Position[0] = newX
                 
-                # Ensure newZ stays within the vertical bounds: [-DimBoard, DimBoard]
+                # Límite en Z
                 if newZ - 10 < -self.dim or newZ + 10 > self.dim:
+                    self.Direction[2] *= -1
+                # Área Roja
+                elif newZ + 10 > 26 and self.Position[0] <= -75 and self.Position[0] >= -75:
                     self.Direction[2] *= -1
                 else:
                     self.Position[2] = newZ
-                
+
                 self.angle = math.acos(self.Direction[0]) * 180 / math.pi
                 if self.Direction[2] > 0:
                     self.angle = 360 - self.angle
@@ -102,7 +105,6 @@ class Lifter:
             delta = 0.01
             if self.platformHeight <= -1.5:
                 self.status = 4
-                #print("Estatus 4")
             else:
                 self.platformHeight -= delta
         elif self.status == 4:
@@ -120,14 +122,17 @@ class Lifter:
             newX = self.Position[0] + self.Direction[0] * self.vel
             newZ = self.Position[2] + self.Direction[2] * self.vel
             
-            # Ensure newX stays within the horizontal bounds: [-DimBoard, -75]
+            # Límite en X
             if newX - 10 < -self.dim or newX + 10 > -75:
                 self.Direction[0] *= -1
             else:
                 self.Position[0] = newX
             
-            # Ensure newZ stays within the vertical bounds: [-DimBoard, DimBoard]
+            # Límite en Z
             if newZ - 10 < -self.dim or newZ + 10 > self.dim:
+                self.Direction[2] *= -1
+            # Área roja
+            elif newZ + 10 > 26 and self.Position[0] <= -75 and self.Position[0] >= -75:
                 self.Direction[2] *= -1
             else:
                 self.Position[2] = newZ
@@ -148,6 +153,7 @@ class Lifter:
                     self.platformUp = True
                 else:
                     self.platformHeight -= delta
+
 
 
     def draw(self):
