@@ -117,6 +117,13 @@ class Package:
             glEnable(GL_TEXTURE_2D)
             glBindTexture(GL_TEXTURE_2D, self.textures[self.txtIndex])
 
+            tex_coords = [
+            (0.0, 0.0),
+            (1.0, 0.0), 
+            (1.0, 1.0), 
+            (0.0, 1.0),  
+            ]
+            
             faces = [
                 [0, 1, 2, 3],  # Cara inferior
                 [4, 5, 6, 7],  # Cara superior
@@ -128,8 +135,8 @@ class Package:
 
             glBegin(GL_QUADS)
             for face in faces:
-                for vertex in face:
-                    glTexCoord2f(0.0, 0.0)  # Adjust if needed
+                for i, vertex in enumerate(face):
+                    glTexCoord2f(*tex_coords[i])  # Map texture coordinates to each vertex
                     glVertex3f(*self.vertexCoords[vertex])
             glEnd()
 
