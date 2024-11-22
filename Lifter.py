@@ -15,8 +15,12 @@ class Lifter:
     def __init__(self, dim, vel, textures):
         self.dim = dim
         # Se inicializa una posicion aleatoria en el tablero
-        # self.Position = [random.randint(-dim, dim), 6, random.randint(-dim, dim)]
-        self.Position = [0, 6, 0]
+        self.Position = [
+            random.randint(-dim, -75),  # Posición en X
+            2,                          # Posición en Y
+            random.randint(75, dim)   # Posición en Z
+        ]
+        #self.Position = [0, 6, 0]
         # Inicializar las coordenadas (x,y,z) del cubo en el tablero
         # almacenandolas en el vector Position
 
@@ -138,7 +142,7 @@ class Lifter:
         glPushMatrix()
         glTranslatef(self.Position[0], self.Position[1], self.Position[2])
         glRotatef(self.angle, 0, 1, 0)
-        glScaled(5, 5, 5)
+        glScaled(5, 8, 6)
         glColor3f(1.0, 1.0, 1.0)
         # front face
         glEnable(GL_TEXTURE_2D)
@@ -198,7 +202,7 @@ class Lifter:
 
         glPushMatrix()
         glTranslatef(0, 1.5, 0)
-        glScaled(0.8, 0.8, 0.8)
+        glScaled(0.5, 0.5, 0.5)
         glColor3f(1.0, 1.0, 1.0)
         head = Cubo(self.textures, 0)
         head.draw()
@@ -210,7 +214,7 @@ class Lifter:
         glBindTexture(GL_TEXTURE_2D, self.textures[1])
         glPushMatrix()
         glTranslatef(-1.2, -1, 1)
-        glScaled(0.3, 0.3, 0.3)
+        glScaled(0.6, 0.6, 0.6)
         glColor3f(1.0, 1.0, 1.0)
         wheel = Cubo(self.textures, 0)
         wheel.draw()
@@ -218,21 +222,21 @@ class Lifter:
 
         glPushMatrix()
         glTranslatef(0.5, -1, 1)
-        glScaled(0.3, 0.3, 0.3)
+        glScaled(0.6, 0.6, 0.6)
         wheel = Cubo(self.textures, 0)
         wheel.draw()
         glPopMatrix()
 
         glPushMatrix()
         glTranslatef(0.5, -1, -1)
-        glScaled(0.3, 0.3, 0.3)
+        glScaled(0.6, 0.6, 0.6)
         wheel = Cubo(self.textures, 0)
         wheel.draw()
         glPopMatrix()
 
         glPushMatrix()
         glTranslatef(-1.2, -1, -1)
-        glScaled(0.3, 0.3, 0.3)
+        glScaled(0.6, 0.6, 0.6)
         wheel = Cubo(self.textures, 0)
         wheel.draw()
         glPopMatrix()

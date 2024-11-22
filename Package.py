@@ -9,8 +9,7 @@ from OpenGL.GLUT import *
 import random
 import math
 
-
-class Basura:
+class Package:
     def __init__(self, dim, vel, textures, txtIndex):
         # Se inicializa las coordenadas de los vertices del cubo
         self.vertexCoords = [1,1,1,1,1,-1,1,-1,-1,1,-1,1,-1,1,1,-1,1,-1,-1,-1,-1,-1,-1,1,]
@@ -21,7 +20,11 @@ class Basura:
 
         self.dim = dim
         # Se inicializa una posicion aleatoria en el tablero
-        self.Position = [random.randint(-dim+15, dim-15), 2, random.randint(-dim+15, dim-15)]
+        self.Position = [
+            random.randint(-dim, -75),  # Posición en X
+            2,                          # Posición en Y
+            random.randint(-dim, -75)   # Posición en Z
+        ]
         # Inicializar las coordenadas (x,y,z) del cubo en el tablero
         # almacenandolas en el vector Position
         # ...
@@ -44,6 +47,8 @@ class Basura:
 
         #Control variable for drawing
         self.alive = True
+        #Control variable for Trailer
+        self.in_cube = False
 
     def update(self):
         # Se debe de calcular la posible nueva posicion del cubo a partir de su
