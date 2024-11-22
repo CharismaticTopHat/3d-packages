@@ -82,14 +82,19 @@ class Lifter:
             else:
                 newX = self.Position[0] + self.Direction[0] * self.vel
                 newZ = self.Position[2] + self.Direction[2] * self.vel
-                if newX - 10 < -self.dim or newX + 10 > self.dim:
+                
+                # Ensure newX stays within the horizontal bounds: [-DimBoard, -75]
+                if newX - 10 < -self.dim or newX + 10 > -75:
                     self.Direction[0] *= -1
                 else:
                     self.Position[0] = newX
+                
+                # Ensure newZ stays within the vertical bounds: [-DimBoard, DimBoard]
                 if newZ - 10 < -self.dim or newZ + 10 > self.dim:
                     self.Direction[2] *= -1
                 else:
                     self.Position[2] = newZ
+                
                 self.angle = math.acos(self.Direction[0]) * 180 / math.pi
                 if self.Direction[2] > 0:
                     self.angle = 360 - self.angle
@@ -102,25 +107,31 @@ class Lifter:
                 self.platformHeight -= delta
         elif self.status == 4:
             if (self.Position[0] <= 20 and self.Position[0] >= -20) and (self.Position[2] <= 20 and self.Position[2] >= -20):
-                self.Position[0] -= (self.Direction[0] * (self.vel/4))
-                self.Position[2] -= (self.Direction[2] * (self.vel/4))
+                self.Position[0] -= (self.Direction[0] * (self.vel / 4))
+                self.Position[2] -= (self.Direction[2] * (self.vel / 4))
             else:
                 self.search()
                 self.status = 0
         else:
             # Update position
-            if random.randint(1,1000) == 69:
+            if random.randint(1, 1000) == 69:
                 self.search()
+            
             newX = self.Position[0] + self.Direction[0] * self.vel
             newZ = self.Position[2] + self.Direction[2] * self.vel
-            if newX - 10 < -self.dim or newX + 10 > self.dim:
+            
+            # Ensure newX stays within the horizontal bounds: [-DimBoard, -75]
+            if newX - 10 < -self.dim or newX + 10 > -75:
                 self.Direction[0] *= -1
             else:
                 self.Position[0] = newX
+            
+            # Ensure newZ stays within the vertical bounds: [-DimBoard, DimBoard]
             if newZ - 10 < -self.dim or newZ + 10 > self.dim:
                 self.Direction[2] *= -1
             else:
                 self.Position[2] = newZ
+            
             self.angle = math.acos(self.Direction[0]) * 180 / math.pi
             if self.Direction[2] > 0:
                 self.angle = 360 - self.angle
@@ -137,6 +148,7 @@ class Lifter:
                     self.platformUp = True
                 else:
                     self.platformHeight -= delta
+
 
     def draw(self):
         glPushMatrix()
