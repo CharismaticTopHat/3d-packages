@@ -56,7 +56,7 @@ radius = 300
 
 # Arreglo para el manejo de texturas
 textures = []
-filenames = ["Plataformas/bars.jpg","Plataformas/wheel.jpeg", "Plataformas/machine.jpg","Plataformas/Cardboard.svg", "Plataformas/Wall.jpg", "Plataformas/TrailerWall.svg", "Plataformas/Ceiling.jpg"]
+filenames = ["Plataformas/bars.jpg","Plataformas/wheel.jpeg", "Plataformas/machine.jpg","Plataformas/Cardboard.svg", "Plataformas/Wall.jpg", "Plataformas/TrailerWall.svg", "Plataformas/Ceiling.jpg", "Plataformas/piso_bodega.jpg", "Plataformas/zona_carga2.jpeg"]
 
 def Axis():
     glShadeModel(GL_FLAT)
@@ -170,38 +170,53 @@ def display():
         obj.draw()
 
     # Área de Montacargas
-    glColor3f(1.0, 0.75, 0.0)
+    '''
+    glEnable(GL_TEXTURE_2D)  # Activar las texturas
+    glBindTexture(GL_TEXTURE_2D, textures[7])
     glBegin(GL_QUADS)
-    glVertex3d(-DimBoard, 2, 75)  
+    glVertex3d(-DimBoard, 2, 75) 
+    glTexCoord2f(1.0, 0.0) 
     glVertex3d(-75, 2, 75)   
+    glTexCoord2f(1.0, 1.0)
     glVertex3d(-75, 2, DimBoard)  
+    glTexCoord2f(0.0, 1.0)
     glVertex3d(-DimBoard, 2, DimBoard)
     glEnd()
-
+    glDisable(GL_TEXTURE_2D)
+    '''
     # Área de Cajas
-    glColor3f(1.0, 1.0, 0.0)
+    glEnable(GL_TEXTURE_2D)  # Activar las texturas
+    glBindTexture(GL_TEXTURE_2D, textures[8])
     glBegin(GL_QUADS)
     glVertex3d(-DimBoard, 2, -DimBoard)
+    glTexCoord2f(1.0, 0.0) 
     glVertex3d(-75, 2, -DimBoard)
+    glTexCoord2f(1.0, 1.0) 
     glVertex3d(-75, 2, -DimBoard + (DimBoard - 75))
+    glTexCoord2f(0.0, 1.0) 
     glVertex3d(-DimBoard, 2, -DimBoard + (DimBoard - 75))
     glEnd()
 
     #Área de Ruta
-    glColor3f(0.0, 1.0, 0.0) 
+    glEnable(GL_TEXTURE_2D)  # Activar las texturas
+    glBindTexture(GL_TEXTURE_2D, textures[7])
     glBegin(GL_QUADS)
-    glVertex3d(-DimBoard, 1, DimBoard)          
-    glVertex3d(-75, 1, DimBoard)                 
-    glVertex3d(-75, 1, -DimBoard)          
+    glVertex3d(-DimBoard, 1, DimBoard)    
+    glTexCoord2f(1.0, 0.0)       
+    glVertex3d(-75, 1, DimBoard) 
+    glTexCoord2f(1.0, 1.0)                 
+    glVertex3d(-75, 1, -DimBoard)
+    glTexCoord2f(0.0, 1.0)           
     glVertex3d(-DimBoard, 1, -DimBoard)    
     glEnd()
-    glColor3f(1.0, 0.0, 0.0) 
     glBegin(GL_QUADS)
     glVertex3d(0, 1, 26)          
     glVertex3d(-75, 1, 26)                 
     glVertex3d(-75, 1, 0)          
     glVertex3d(0, 1, 0)    
     glEnd()
+    glDisable(GL_TEXTURE_2D)
+
 
     # Dibujar Plano Inferior
     planoText()

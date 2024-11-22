@@ -65,15 +65,48 @@ class Trailer:
     
     def draw(self):
         # Contenedor
-        glColor3f(1.0, 0.5, 0.0)
+        glEnable(GL_TEXTURE_2D)  # Activar las texturas
+        glBindTexture(GL_TEXTURE_2D, self.textures[5])  # Vincular la textura deseada
+
         glBegin(GL_QUADS)
-        for face in self.faces:
-            for vertex in face:
-                glTexCoord2f(0.0, 0.0) 
-                glVertex3d(*vertex)
+
+        # Cara inferior
+        glTexCoord2f(0.0, 0.0)
+        glVertex3d(*self.points[3])
+        glTexCoord2f(1.0, 0.0)
+        glVertex3d(*self.points[2])
+        glTexCoord2f(1.0, 1.0)
+        glVertex3d(*self.points[1])
+        glTexCoord2f(0.0, 1.0)
+        glVertex3d(*self.points[0])
+
+        # Cara superior
+        glTexCoord2f(0.0, 0.0)
+        glVertex3d(*self.points[4])
+        glTexCoord2f(1.0, 0.0)
+        glVertex3d(*self.points[5])
+        glTexCoord2f(1.0, 1.0)
+        glVertex3d(*self.points[6])
+        glTexCoord2f(0.0, 1.0)
+        glVertex3d(*self.points[7])
+
+        # Cara derecha
+        glTexCoord2f(0.0, 0.0)
+        glVertex3d(*self.points[5])
+        glTexCoord2f(1.0, 0.0)
+        glVertex3d(*self.points[6])
+        glTexCoord2f(1.0, 1.0)
+        glVertex3d(*self.points[2])
+        glTexCoord2f(0.0, 1.0)
+        glVertex3d(*self.points[1])
+
         glEnd()
 
+        glDisable(GL_TEXTURE_2D)
+
         # Cabina
+        glEnable(GL_TEXTURE_2D)  # Activar las texturas
+        glBindTexture(GL_TEXTURE_2D, self.textures[5])
         glPushMatrix()
         glTranslatef(self.length+16, 25, 13.5)
         glScaled(15.5, 15.5, 15.5)
@@ -81,6 +114,7 @@ class Trailer:
         head = Cubo(self.textures, 0)
         head.draw()
         glPopMatrix()
+        glDisable(GL_TEXTURE_2D)
 
         # Llantas
         glEnable(GL_TEXTURE_2D)
