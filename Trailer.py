@@ -5,6 +5,7 @@ from pygame.locals import *
 from OpenGL.GL import *
 from OpenGL.GLU import *
 from OpenGL.GLUT import *
+from Cubo import Cubo
 
 import random
 import math
@@ -63,10 +64,40 @@ class Trailer:
         return distance < agent_radius
     
     def draw(self):
+        # Contenedor
         glColor3f(1.0, 0.5, 0.0)
-        glBegin(GL_QUADS) 
+        glBegin(GL_QUADS)
         for face in self.faces:
             for vertex in face:
                 glTexCoord2f(0.0, 0.0) 
-                glVertex3d(*vertex) 
+                glVertex3d(*vertex)
         glEnd()
+
+        # Cabina
+        glPushMatrix()
+        glTranslatef(self.length+16, 25, 13.5)
+        glScaled(15.5, 15.5, 15.5)
+        glColor3f(1.0, 0.1, 0.0) 
+        head = Cubo(self.textures, 0)
+        head.draw()
+        glPopMatrix()
+
+        # Llantas
+        glEnable(GL_TEXTURE_2D)
+        glBindTexture(GL_TEXTURE_2D, self.textures[1])
+        wheel_positions = [
+            (0, 0, self.width+3),            
+            (self.length+3, 0, self.width+3),   
+            (self.length+3, 0, 0),           
+            (0, 0, 0),                   
+        ]
+        for pos in wheel_positions:
+            glPushMatrix()
+            glTranslatef(*pos)
+            glScaled(4.6, 4.6, 4.6)
+            glColor3f(1.0, 1.0, 1.0)
+            wheel = Cubo(self.textures, 0)
+            wheel.draw()
+            glPopMatrix()
+        glDisable(GL_TEXTURE_2D)
+
