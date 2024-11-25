@@ -9,12 +9,22 @@ from objloader import *
 
 import math
 import random
+import requests
 # Se carga el archivo de la clase Cubo
 import sys
 sys.path.append('..')
 from Lifter import Lifter
 from Package import Package
 from Trailer import Trailer
+
+URL_BASE = "http://localhost:8000"
+r = requests.post(URL_BASE+ "/simulations", allow_redirects=False)
+datos = r.json()
+LOCATION = datos["Location"]
+robotsX = datos["robots"][0]["pos"][0]
+robotsZ = datos["robots"][0]["pos"][1]
+boxesX = datos["boxes"][0]["pos"][0]
+boxesZ = datos["boxes"][0]["pos"][1]
 
 screen_width = 500
 screen_height = 500
@@ -40,26 +50,58 @@ Y_MIN=-500
 Y_MAX=500
 Z_MIN=-500
 Z_MAX=500
+#Pantalla de Ejecución
+SCREEN_WIDTH = 900
+SCREEN_HEIGHT = 600
 #Dimension del plano
 DimBoard = 300
-
-
-#lifters
-lifters = []
-nlifters = 5
-
-basuras = []
-npackages = random.randint(10, 50)
+#Procesado en Webapi
+URL_BASE = "http://localhost:8000"
 
 # Variables para el control del observador
 theta = 0.0
 radius = 300
 
 trailer = []
+lifters = {}
+packages = {}
 
 # Arreglo para el manejo de texturas
 textures = []
 filenames = ["Plataformas/bars.jpg","Plataformas/wheel.jpeg", "Plataformas/machine.jpg","Plataformas/Cardboard.svg", "Plataformas/Wall.jpg", "Plataformas/TrailerWall.svg", "Plataformas/Ceiling.jpg", "Plataformas/piso_bodega.jpg", "Plataformas/zona_carga2.jpeg"]
+
+pygame.init()
+
+def fetch_data():
+    """Fetch data from server and handle errors."""
+    try:
+        response = requests.post(URL_BASE + "/simulations", allow_redirects=False)
+        response.raise_for_status()
+        datos = response.json()
+        lifters_data = datos["robots"]
+        boxes_data = datos["boxes"]
+        location = datos["Location"]
+        return lifters_data, boxes_data, location
+    except requests.exceptions.RequestException as e:
+        print(f"Error fetching data: {e}")
+        return None, None, None
+
+def update_data(location):
+    """Update data from server using the specified location."""
+    try:
+        response = requests.get(URL_BASE + location)
+        response.raise_for_status()
+        return response.json()
+    except requests.exceptions.RequestException as e:
+        print(f"Error updating data: {e}")
+        return None
+
+def initialize_objects(lifters_data, boxes_data):
+    """Initialize robot, box, and storage objects based on the server data."""
+    for i, rob in enumerate(lifters_data):
+        lifters[f"l{i}"] = Lifter(DimBoard, 0.7, textures)
+    for i, _ in enumerate(boxes_data):
+        packages[f"p{i}"] = Package(DimBoard,1,textures,3)
 
 def Axis():
     glShadeModel(GL_FLAT)
@@ -94,7 +136,6 @@ def Texturas(filepath):
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR)
     image = pygame.image.load(filepath).convert()
     w, h = image.get_rect().size
-    image = pygame.image.load(filepath).convert_alpha()  # Ensure image has an alpha channel
     image_data = pygame.image.tostring(image, "RGBA")
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, w, h, 0, GL_RGBA, GL_UNSIGNED_BYTE, image_data)
     glGenerateMipmap(GL_TEXTURE_2D)
@@ -117,12 +158,6 @@ def Init():
     
     for i in filenames:
         Texturas(i)
-    
-    for i in range(nlifters):
-        lifters.append(Lifter(DimBoard, 0.7, textures))
-        
-    for i in range(npackages):
-        basuras.append(Package(DimBoard,1,textures,3))
         
     trailer.append(OBJ("truck.obj", swapyz=True))
     trailer[0].generate()
@@ -148,32 +183,22 @@ def planoText():
     
     glEnd()
     # glDisable(GL_TEXTURE_2D)
-
-def checkCollisions():
-    for c in lifters:
-        for b in basuras:
-            distance = math.sqrt(math.pow((b.Position[0] - c.Position[0]), 2) + math.pow((b.Position[2] - c.Position[2]), 2))
-            if distance <= c.radiusCol:
-                if c.status == 0 and b.alive:
-                    b.alive = False
-                    c.status = 1
-                #print("Colision detectada")
                 
 
-def display():
+def display(lifters_data, boxes_data):
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
     
-    # Se dibujan los cubos
-    for obj in lifters:
-        obj.draw()
-        obj.update()    
+    # Se los Montacargas
+    for i, _ in enumerate(lifters_data):
+        lifter = lifters[f"l{i}"]
+        lifter.draw()
+    
+    for i, _ in enumerate(boxes_data):
+        package = packages[f"p{i}"]
+        package.draw()
 
     #trailer = Trailer(textures)
     #trailer.draw()
-    
-    # Se dibujan basuras
-    for obj in basuras:
-        obj.draw()
 
     # Área de Montacargas
     '''
@@ -304,8 +329,6 @@ def display():
     glVertex3d(-DimBoard, wall_height, -DimBoard)
     glEnd()
     glDisable(GL_TEXTURE_2D)
-
-    checkCollisions()
     
     glPushMatrix()  
     #correcciones para dibujar el objeto en plano XZ
@@ -317,17 +340,17 @@ def display():
     trailer[0].render()  
     glPopMatrix()
     
+    pygame.display.flip()
+    
 def lookAt():
     glLoadIdentity()
     rad = theta * math.pi / 180
     newX = EYE_X * math.cos(rad) + EYE_Z * math.sin(rad)
     newZ = -EYE_X * math.sin(rad) + EYE_Z * math.cos(rad)
     gluLookAt(newX,EYE_Y,newZ,CENTER_X,CENTER_Y,CENTER_Z,UP_X,UP_Y,UP_Z)
-    
-done = False
-Init()
-while not done:
-    keys = pygame.key.get_pressed()  # Checking pressed keys
+
+def handleInput():
+    keys = pygame.key.get_pressed()
     if keys[pygame.K_RIGHT]:
         if theta > 359.0:
             theta = 0
@@ -348,15 +371,47 @@ while not done:
         EYE_Y -= 1.0
         lookAt()
 
-    for event in pygame.event.get():
-        if event.type == pygame.KEYDOWN:
-            if event.key == pygame.K_ESCAPE:
-                done = True
-        if event.type == pygame.QUIT:
-            done = True
-    display()
 
-    display()
-    pygame.display.flip()
-    pygame.time.wait(10)
-pygame.quit()
+def init_opengl():
+    """Initialize OpenGL settings."""
+    screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT), DOUBLEBUF | OPENGL)
+    pygame.display.set_caption("OpenGL: Packages")
+    glMatrixMode(GL_PROJECTION)
+    glLoadIdentity()
+    gluOrtho2D(-100, 1000, -100, 1000)
+    glMatrixMode(GL_MODELVIEW)
+    glLoadIdentity()
+    glClearColor(0, 0, 0, 0)
+    glPolygonMode(GL_FRONT_AND_BACK, GL_LINE)
+    glShadeModel(GL_FLAT)
+    
+    lifters_data, boxes_data, location = fetch_data()
+    if lifters_data:
+        initialize_objects(lifters_data, boxes_data)
+        init_opengl()
+
+        # Set your desired update interval and frame delay here
+        UPDATE_INTERVAL = 1  # Update data every 500 milliseconds
+        FRAME_DELAY = 1       # Frame delay set to 30 milliseconds
+
+        done = False
+        while not done:
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    done = True
+
+            handleInput()
+            Axis()
+            display(lifters_data, boxes_data, storages_data)
+
+            # Update data every UPDATE_INTERVAL milliseconds
+            if pygame.time.get_ticks() % UPDATE_INTERVAL == 0:
+                new_data = update_data(location)
+                if new_data:
+                    robots_data = new_data["robots"]
+                    boxes_data = new_data["boxes"]
+                    storages_data = new_data["storages"]
+            # Reduce delay to FRAME_DELAY for a faster frame rate
+            pygame.time.wait(FRAME_DELAY)
+
+    pygame.quit()

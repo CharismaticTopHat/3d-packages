@@ -15,14 +15,14 @@ class Lifter:
     def __init__(self, dim, vel, textures):
         self.dim = dim
         # Se inicializa una posicion aleatoria en el tablero
-        self.Position = [
+        self.position = [
             random.randint(-dim, -75),  # Posición en X
             10,                         # Posición en Y
             dim-10                      # Posición en Z
         ]
-        #self.Position = [0, 6, 0]
+        #self.position = [0, 6, 0]
         # Inicializar las coordenadas (x,y,z) del cubo en el tablero
-        # almacenandolas en el vector Position
+        # almacenandolas en el vector position
 
         # Se inicializa un vector de direccion aleatorio
         dirX = random.randint(-10, 10) or 1
@@ -63,11 +63,15 @@ class Lifter:
 
     def targetTrailer(self):
         # Set direction to center
-        dirX = -self.Position[0]
-        dirZ = -self.Position[2]
+        dirX = -self.position[0]
+        dirZ = -self.position[2]
         magnitude = math.sqrt(dirX**2 + dirZ**2)
         self.Direction = [(dirX / magnitude), 0, (dirZ / magnitude)]
 
+    def updatePos(self, posX, posZ):
+        self.position[0] = posX
+        self.position[2] = posZ
+    
     def update(self):
         if self.status == 1:
             delta = 0.01
@@ -77,26 +81,26 @@ class Lifter:
             else:
                 self.platformHeight += delta
         elif self.status == 2:
-            if (self.Position[0] <= 10 and self.Position[0] >= -10) and (self.Position[2] <= 10 and self.Position[2] >= -10):
+            if (self.position[0] <= 10 and self.position[0] >= -10) and (self.position[2] <= 10 and self.position[2] >= -10):
                 self.status = 3
             else:
-                newX = self.Position[0] + self.Direction[0] * self.vel
-                newZ = self.Position[2] + self.Direction[2] * self.vel
+                newX = self.position[0] + self.Direction[0] * self.vel
+                newZ = self.position[2] + self.Direction[2] * self.vel
                 
                 # Límite en X
                 if newX - 10 < -self.dim or newX + 10 > -75:
                     self.Direction[0] *= -1
                 else:
-                    self.Position[0] = newX
+                    self.position[0] = newX
                 
                 # Límite en Z
                 if newZ - 10 < -self.dim or newZ + 10 > self.dim:
                     self.Direction[2] *= -1
                 # Área Roja
-                elif newZ + 10 > 26 and self.Position[0] <= -75 and self.Position[0] >= -75:
+                elif newZ + 10 > 26 and self.position[0] <= -75 and self.position[0] >= -75:
                     self.Direction[2] *= -1
                 else:
-                    self.Position[2] = newZ
+                    self.position[2] = newZ
 
                 self.angle = math.acos(self.Direction[0]) * 180 / math.pi
                 if self.Direction[2] > 0:
@@ -108,9 +112,9 @@ class Lifter:
             else:
                 self.platformHeight -= delta
         elif self.status == 4:
-            if (self.Position[0] <= 20 and self.Position[0] >= -20) and (self.Position[2] <= 20 and self.Position[2] >= -20):
-                self.Position[0] -= (self.Direction[0] * (self.vel / 4))
-                self.Position[2] -= (self.Direction[2] * (self.vel / 4))
+            if (self.position[0] <= 20 and self.position[0] >= -20) and (self.position[2] <= 20 and self.position[2] >= -20):
+                self.position[0] -= (self.Direction[0] * (self.vel / 4))
+                self.position[2] -= (self.Direction[2] * (self.vel / 4))
             else:
                 self.search()
                 self.status = 0
@@ -119,23 +123,23 @@ class Lifter:
             if random.randint(1, 1000) == 69:
                 self.search()
             
-            newX = self.Position[0] + self.Direction[0] * self.vel
-            newZ = self.Position[2] + self.Direction[2] * self.vel
+            newX = self.position[0] + self.Direction[0] * self.vel
+            newZ = self.position[2] + self.Direction[2] * self.vel
             
             # Límite en X
             if newX - 10 < -self.dim or newX + 10 > -75:
                 self.Direction[0] *= -1
             else:
-                self.Position[0] = newX
+                self.position[0] = newX
             
             # Límite en Z
             if newZ - 10 < -self.dim or newZ + 10 > self.dim:
                 self.Direction[2] *= -1
             # Área roja
-            elif newZ + 10 > 26 and self.Position[0] <= -75 and self.Position[0] >= -75:
+            elif newZ + 10 > 26 and self.position[0] <= -75 and self.position[0] >= -75:
                 self.Direction[2] *= -1
             else:
-                self.Position[2] = newZ
+                self.position[2] = newZ
             
             self.angle = math.acos(self.Direction[0]) * 180 / math.pi
             if self.Direction[2] > 0:
@@ -158,7 +162,7 @@ class Lifter:
 
     def draw(self):
         glPushMatrix()
-        glTranslatef(self.Position[0], self.Position[1], self.Position[2])
+        glTranslatef(self.position[0], self.position[1], self.position[2])
         glRotatef(self.angle, 0, 1, 0)
         glScaled(5, 8, 6)
         glColor3f(1.0, 1.0, 1.0)

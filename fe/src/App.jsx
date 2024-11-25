@@ -9,7 +9,7 @@ function App() {
   const rendererRef = useRef(null);
   const objects = useRef({ boxes: [], robots: [], storages: [] });
 
-  const [sliderGridSize, setSliderGridSize] = useState(80);
+  const [sliderGridSize, setSliderGridSize] = useState(300);
   const [number, setNumber] = useState(40);
   const [simSpeed, setSimSpeed] = useState(2);
   const [boxes, setBoxes] = useState([]);

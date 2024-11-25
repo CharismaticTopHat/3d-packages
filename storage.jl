@@ -11,12 +11,12 @@ Item = pyimport("py3dbp").Item
 
 packer = Packer()
 
-packer.add_bin(Bin("large-2-box", 146, 40, 26, 70.0))
+packer.add_bin(Bin("large-2-box", 320, 200, 220, 70.0))
 
-packer.add_item(Item("Letter", 40.9370, 1.9685, 40.9685, 1.0))
-packer.add_item(Item("Bowling Ball", 40.8740, 40.9370, 40.9685, 100.0))
-packer.add_item(Item("Poster", 70.9370, 3.9685, 50.9685, 2.0))
-packer.add_item(Item("Cat Tower", 140.9370, 130.9685, 100.9685, 3.0))
+packer.add_item(Item("Letter", 70, 70, 70, 1.0))
+packer.add_item(Item("Bowling Ball", 50, 50, 50 , 100.0))
+packer.add_item(Item("Poster", 50, 50, 50, 2.0))
+packer.add_item(Item("Cat Tower", 70, 70, 70, 3.0))
 
 packer.pack()
 
@@ -302,15 +302,21 @@ end
 function deliver_box_in_front!(Robot::robot, model, Storage::storage)
     if Robot.carried_box !== nothing
         delivered_box = Robot.carried_box
-        push!(Storage.boxes, delivered_box)  # Añadir la caja al almacenamiento
-        delivered_box.status = delivered    # Marcar como entregada
-        delivered_box.pos = Storage.pos     # Actualizar la posición
-        Robot.carried_box = nothing         # Limpiar el robot
-        Robot.capacity = empty              # Marcar el robot como vacío
+        push!(Storage.boxes, delivered_box)  # Add box to storage
+        delivered_box.status = delivered    # Mark as delivered
+        delivered_box.pos = Storage.pos     # Update position to storage area
+        
+        # Set box position in packer[:items]
+        for item in packer[:bins][1][:items]
+            if item[:name] == delivered_box.name
+                item[:position] = Storage.pos  # Align packer position
+            end
+        end
+        
+        Robot.carried_box = nothing         # Clear the robot
+        Robot.capacity = empty              # Mark robot as empty
     end
 end
-
-
 
 # Función auxiliar para verificar si dos posiciones son adyacentes (sin diagonal)
 function is_adjacent(pos1, pos2)
@@ -478,7 +484,7 @@ function calculate_dependencies!(model, packer)
     end
 end
 
-function initialize_model(; griddims=(80, 80), number=80, packer=packer)
+function initialize_model(; griddims=(300, 600), number=80, packer=packer)
     box_index_ref = Ref(1)  # Índice local para esta simulación
     space = GridSpace(griddims; periodic=false, metric=:manhattan)
     model = ABM(
@@ -490,7 +496,7 @@ function initialize_model(; griddims=(80, 80), number=80, packer=packer)
 
     all_positions = [(x, y) for x in 1:griddims[1], y in 1:griddims[2]-1]
     shuffled_positions = shuffle(all_positions)
-
+    
     # Configurar almacenamiento basado en el empaquetador
     if packer !== nothing
         packer_bins = packer[:bins]
@@ -520,7 +526,7 @@ function initialize_model(; griddims=(80, 80), number=80, packer=packer)
     end
 
     # Configurar robots después de agregar las cajas
-    num_robots = 5
+    num_robots = 3
     bottom_y = griddims[2]
     initial_position = div(griddims[1], 10)
     spacing = 2 * initial_position

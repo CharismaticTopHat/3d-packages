@@ -12,10 +12,9 @@ import math
 
 class Trailer:
     def __init__(self, textures):
-        self.radius = 100
-        self.length = 146
-        self.height = 41
-        self.width = 26
+        self.length = 320
+        self.height = 201
+        self.width = 200
         self.points = [
             (0, 1, self.width),   
             (self.length, 1, self.width), 
