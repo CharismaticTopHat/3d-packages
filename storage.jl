@@ -80,9 +80,6 @@ global assigned_box_index = 1
     container::String  # Original container field
     assigned_storage::String  # Storage name to which the box should be delivered
     depends_on::Vector{String} = []  # Dependencias (cajas que deben entregarse primero)
-    width::Float64 = 0.0
-    height::Float64 = 0.0
-    depth::Float64 = 0.0
 end
 
 
@@ -96,6 +93,9 @@ end
     nextPos::Tuple{Float64, Float64} = (0.0, 0.0)
     dx::Int = 0
     dy::Int = 0
+    width::Float64 = 0.0
+    height::Float64 = 0.0
+    depth::Float64 = 0.0
     target_box::Union{box, Nothing} = nothing  # Caja asignada al robot
     assigned_boxes::Vector{String} = []  # Cajas asignadas al robot
     current_index::Int = 1  # Índice actual en el arreglo assigned_boxes
@@ -104,9 +104,6 @@ end
 @agent struct storage(GridAgent{2})
     name::String
     boxes::Vector{box} = []
-    width::Float64 = 0.0
-    height::Float64 = 0.0
-    depth::Float64 = 0.0
 end
 
 # Verificar si una caja es apta
@@ -164,14 +161,6 @@ function update_orientation!(agent::robot, dx::Int, dy::Int)
         agent.orientation = orient_down
     end
 end
-
-# Function to check if a position is valid within grid dimensions
-function valid_position(pos::Tuple{Int, Int}, griddims::Tuple{Int, Int})
-    x, y = pos
-    max_x, max_y = griddims
-    return x > 0 && x <= max_x && y > 0 && y <= max_y
-end
-
 
 function try_move!(agent::robot, model, dx::Int, dy::Int, griddims)
     current_pos = agent.pos
@@ -299,6 +288,7 @@ function agent_step!(agent::robot, model, griddims, box_index_ref::Base.RefValue
             move_towards!(agent, storage_agent.pos, model, griddims)
             if is_adjacent(agent.pos, storage_agent.pos)
                 deliver_box_in_front!(agent, model, storage_agent)
+                return_to_initial_x!(agent, model, griddims)
 
                 # Asignar nueva caja al robot o enviarlo a la zona de espera
                 agent.target_box = assign_next_box(packer, model, box_index_ref)
@@ -520,7 +510,7 @@ function initialize_model(; griddims=(80, 80), number=80, packer=packer)
         storage_positions = [(x, griddims[2]) for x in 1:griddims[1] if x % 5 == 0]
         for (i, bin) in enumerate(packer_bins)
             pos = storage_positions[i % length(storage_positions) + 1]
-            add_agent!(storage, model; pos = pos, name = bin[:name], width = bin[:width], height = bin[:height], depth = bin[:depth])
+            add_agent!(storage, model; pos = pos, name = bin[:name])
         end
 
         # Añadir todas las cajas (aptas e inapropiadas)
@@ -532,10 +522,7 @@ function initialize_model(; griddims=(80, 80), number=80, packer=packer)
                 pos = pos,
                 name = item[:name],
                 container = container_name,
-                assigned_storage = container_name,
-                width = item[:width],
-                height = item[:height],
-                depth = item[:depth]
+                assigned_storage = container_name
             )
         end
     else
