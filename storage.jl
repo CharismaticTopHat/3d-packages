@@ -48,8 +48,8 @@ for b in packer[:bins]
     println("***************************************************")
 end
 
-assigned_boxes = Dict{String,String}()
-assigned_boxes = Dict{String,String}()
+assigned_boxes = Dict{String, String}()
+assigned_boxes = Dict{String, String}()
 for b in packer[:bins]
     # Assign fitted items
     for item in b[:items]
@@ -86,17 +86,17 @@ global assigned_box_index = 1
 end
 
 
-@agent struct robot(GridAgent{2})
+@agent struct robot(GridAgent{2}) 
     capacity::RobotStatus = empty
     orientation::Float64 = orient_right
-    carried_box::Union{box,Nothing} = nothing
+    carried_box::Union{box, Nothing} = nothing
     initial_x::Int = 0
     stopped::Movement = moving
     counter::Int = 0
-    nextPos::Tuple{Float64,Float64} = (0.0, 0.0)
+    nextPos::Tuple{Float64, Float64} = (0.0, 0.0)
     dx::Int = 0
     dy::Int = 0
-    target_box::Union{box,Nothing} = nothing  # Caja asignada al robot
+    target_box::Union{box, Nothing} = nothing  # Caja asignada al robot
     assigned_boxes::Vector{String} = []  # Cajas asignadas al robot
     current_index::Int = 1  # Índice actual en el arreglo assigned_boxes
 end
@@ -142,19 +142,31 @@ function update_orientation_and_counter!(agent::robot, dx::Int, dy::Int)
 
     if agent.orientation != new_orientation
         if (agent.orientation == orient_up && new_orientation == orient_down) ||
-           (agent.orientation == orient_left && new_orientation == orient_right) ||
-           (agent.orientation == orient_down && new_orientation == orient_up) ||
-           (agent.orientation == orient_right && new_orientation == orient_left)
-            agent.counter = 18
+            (agent.orientation == orient_left && new_orientation == orient_right) ||
+            (agent.orientation == orient_down && new_orientation == orient_up) ||
+            (agent.orientation == orient_right && new_orientation == orient_left)
+            agent.counter = 18 
         else
             agent.counter = 9
         end
         agent.orientation = new_orientation
     end
 end
+# Actualiza la orientación del coche según la dirección de movimiento
+function update_orientation!(agent::robot, dx::Int, dy::Int)
+    if dx == 1
+        agent.orientation = orient_right
+    elseif dx == -1
+        agent.orientation = orient_left
+    elseif dy == 1
+        agent.orientation = orient_up
+    elseif dy == -1
+        agent.orientation = orient_down
+    end
+end
 
 # Function to check if a position is valid within grid dimensions
-function valid_position(pos::Tuple{Int,Int}, griddims::Tuple{Int,Int})
+function valid_position(pos::Tuple{Int, Int}, griddims::Tuple{Int, Int})
     x, y = pos
     max_x, max_y = griddims
     return x > 0 && x <= max_x && y > 0 && y <= max_y
@@ -180,7 +192,7 @@ function try_move!(agent::robot, model, dx::Int, dy::Int, griddims)
         return true
     else
         # Intentar rutas alternativas
-        #println("Robot $(agent.id) encuentra obstáculo en la posición $new_position. Buscando ruta alternativa.")
+        println("Robot $(agent.id) encuentra obstáculo en la posición $new_position. Buscando ruta alternativa.")
 
         # Generar direcciones alternativas
         alternative_directions = [(1, 0), (-1, 0), (0, 1), (0, -1)]
@@ -192,17 +204,17 @@ function try_move!(agent::robot, model, dx::Int, dy::Int, griddims)
             if valid_position(alt_position, griddims) && !(alt_position in obstacles)
                 move_agent!(agent, alt_position, model)
                 update_orientation_and_counter!(agent, alt_dx, alt_dy)
-                #println("Robot $(agent.id) se movió a $alt_position para evitar obstáculos.")
+                println("Robot $(agent.id) se movió a $alt_position para evitar obstáculos.")
                 return true
             end
         end
 
-        #println("Robot $(agent.id) no encontró ruta alternativa y permanece en su lugar.")
+        println("Robot $(agent.id) no encontró ruta alternativa y permanece en su lugar.")
         return false
     end
 end
 
-function get_next_box_in_order(current_box_name::Union{String,Nothing}, packer, model)
+function get_next_box_in_order(current_box_name::Union{String, Nothing}, packer, model)
     found_current = current_box_name === nothing  # Flag para iniciar la búsqueda
     for bin in packer[:bins]
         for item in bin[:items]
@@ -271,13 +283,13 @@ function agent_step!(agent::robot, model, griddims, box_index_ref::Base.RefValue
 
         if storage_agent !== nothing
             dist_to_storage = abs(agent.pos[1] - storage_agent.pos[1]) + abs(agent.pos[2] - storage_agent.pos[2])
-
+            
             if !all(dep -> find_agent_by_name(dep, model).status == delivered, agent.carried_box.depends_on)
                 if dist_to_storage <= 8
-                    #println("El robot $(agent.id) está dentro del radio de 4 del almacenamiento para la caja $(agent.carried_box.name). Moviéndose temporalmente hacia arriba.")
+                    println("El robot $(agent.id) está dentro del radio de 4 del almacenamiento para la caja $(agent.carried_box.name). Moviéndose temporalmente hacia arriba.")
                     return  # Detente hasta que las dependencias se cumplan
                 else
-                    #println("El robot $(agent.id) sigue trabajando ya que está fuera del radio de espera para la caja $(agent.carried_box.name).")
+                    println("El robot $(agent.id) sigue trabajando ya que está fuera del radio de espera para la caja $(agent.carried_box.name).")
                 end
             end
         end
@@ -313,21 +325,15 @@ end
 function deliver_box_in_front!(Robot::robot, model, Storage::storage)
     if Robot.carried_box !== nothing
         delivered_box = Robot.carried_box
-        push!(Storage.boxes, delivered_box)  # Add box to storage
-        delivered_box.status = delivered    # Mark as delivered
-        delivered_box.pos = Storage.pos     # Update position to storage area
-        
-        # Set box position in packer[:items]
-        for item in packer[:bins][1][:items]
-            if item[:name] == delivered_box.name
-                item[:position] = Storage.pos  # Align packer position
-            end
-        end
-        
-        Robot.carried_box = nothing         # Clear the robot
-        Robot.capacity = empty              # Mark robot as empty
+        push!(Storage.boxes, delivered_box)  # Añadir la caja al almacenamiento
+        delivered_box.status = delivered    # Marcar como entregada
+        delivered_box.pos = Storage.pos     # Actualizar la posición
+        Robot.carried_box = nothing         # Limpiar el robot
+        Robot.capacity = empty              # Marcar el robot como vacío
     end
 end
+
+
 
 # Función auxiliar para verificar si dos posiciones son adyacentes (sin diagonal)
 function is_adjacent(pos1, pos2)
@@ -430,19 +436,19 @@ function move_towards!(agent::robot, target_pos, model, griddims)
 
     # Calcular ruta usando A*
     path = find_path(current_pos, target_pos, obstacles, griddims)
-
+    
     # Validar el contenido de `path`
     if isempty(path)
-        #println("Robot $(agent.id): No se encontró ruta válida hacia $target_pos.")
+        println("Robot $(agent.id): No se encontró ruta válida hacia $target_pos.")
 
         # Si el destino está en y = 1, buscar otra posición válida en x
         if target_pos[2] == 1
             new_target_pos = find_available_x(1, griddims, model)
             if new_target_pos !== nothing
-                #println("Robot $(agent.id): Moviéndose a una nueva posición disponible $new_target_pos en y = 1.")
+                println("Robot $(agent.id): Moviéndose a una nueva posición disponible $new_target_pos en y = 1.")
                 move_towards!(agent, new_target_pos, model, griddims)
             else
-                #println("Robot $(agent.id): No hay posiciones disponibles en y = 1.")
+                println("Robot $(agent.id): No hay posiciones disponibles en y = 1.")
             end
         end
         return
@@ -467,7 +473,7 @@ end
 # Function to find an agent by its name, limited to box and storage agents
 function find_agent_by_name(name::String, model)
     for agent in allagents(model)
-        if isa(agent, Union{box,storage}) && agent.name == name
+        if isa(agent, Union{box, storage}) && agent.name == name
             return agent
         end
     end
@@ -495,41 +501,41 @@ function calculate_dependencies!(model, packer)
     end
 end
 
-function initialize_model(; griddims=(30, 30), number=80, packer=packer)
+function initialize_model(; griddims=(80, 80), number=80, packer=packer)
     box_index_ref = Ref(1)  # Índice local para esta simulación
-    space = GridSpace(griddims; periodic=false, metric=:manhattan)
+    space = GridSpace(griddims; periodic = false, metric = :manhattan)
     model = ABM(
-        Union{robot,box,storage},
-        space;
-        (agent_step!)=(agent, model) -> agent_step!(agent, model, griddims, box_index_ref),
-        scheduler=Schedulers.fastest
+    Union{robot, box, storage},
+    space;
+    agent_step! = (agent, model) -> agent_step!(agent, model, griddims, box_index_ref),
+    scheduler = Schedulers.fastest
     )
 
     all_positions = [(x, y) for x in 1:griddims[1], y in 1:griddims[2]-1]
     shuffled_positions = shuffle(all_positions)
-    
+
     # Configurar almacenamiento basado en el empaquetador
     if packer !== nothing
         packer_bins = packer[:bins]
         storage_positions = [(x, griddims[2]) for x in 1:griddims[1] if x % 5 == 0]
         for (i, bin) in enumerate(packer_bins)
-            pos = storage_positions[i%length(storage_positions)+1]
-            add_agent!(storage, model; pos=pos, name=bin[:name], width=bin[:width], height=bin[:height], depth=bin[:depth])
+            pos = storage_positions[i % length(storage_positions) + 1]
+            add_agent!(storage, model; pos = pos, name = bin[:name], width = bin[:width], height = bin[:height], depth = bin[:depth])
         end
 
         # Añadir todas las cajas (aptas e inapropiadas)
         all_items = packer[:items]
         for (i, item) in enumerate(all_items)
             container_name = assigned_boxes[item[:name]]
-            pos = shuffled_positions[i%length(shuffled_positions)+1]
+            pos = shuffled_positions[i % length(shuffled_positions) + 1]
             add_agent!(box, model;
-                pos=pos,
-                name=item[:name],
-                container=container_name,
-                assigned_storage=container_name,
-                width=item[:width],
-                height=item[:height],
-                depth=item[:depth]
+                pos = pos,
+                name = item[:name],
+                container = container_name,
+                assigned_storage = container_name,
+                width = item[:width],
+                height = item[:height],
+                depth = item[:depth]
             )
         end
     else
@@ -537,17 +543,17 @@ function initialize_model(; griddims=(30, 30), number=80, packer=packer)
     end
 
     # Configurar robots después de agregar las cajas
-    num_robots = 3
+    num_robots = 5
     bottom_y = griddims[2]
     initial_position = div(griddims[1], 10)
     spacing = 2 * initial_position
 
-    robot_columns = [initial_position + (i - 1) * spacing for i in 1:num_robots]
+    robot_columns = [initial_position + (i-1) * spacing for i in 1:num_robots]
     robot_positions = [(col, bottom_y) for col in robot_columns]
 
     for robot_pos in robot_positions
         next_box = assign_next_box(packer, model, box_index_ref)  # Usa índice local
-        add_agent!(robot, model; pos=robot_pos, initial_x=robot_pos[1], target_box=next_box)
+        add_agent!(robot, model; pos = robot_pos, initial_x = robot_pos[1], target_box = next_box)
     end
 
     calculate_dependencies!(model, packer)

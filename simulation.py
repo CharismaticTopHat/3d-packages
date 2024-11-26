@@ -21,7 +21,7 @@ screen_width = 500
 screen_height = 500
 #vc para el obser.
 FOVY=60.0
-ZNEAR=0.01
+ZNEAR=0.1
 ZFAR=1800.0
 #Variables para definir la posicion del observador
 #gluLookAt(EYE_X,EYE_Y,EYE_Z,CENTER_X,CENTER_Y,CENTER_Z,UP_X,UP_Y,UP_Z)
