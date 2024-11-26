@@ -11,23 +11,29 @@ Item = pyimport("py3dbp").Item
 
 packer = Packer()
 
-packer.add_bin(Bin("large-2-box", 320, 200, 220, 70.0))
+packer.add_bin(Bin("large-2-box", 320, 200, 220, 3200.0))
 
-packer.add_item(Item("Letter", 70, 70, 70, 1.0))
-packer.add_item(Item("Bowling Ball", 50, 50, 50 , 100.0))
-packer.add_item(Item("Poster", 50, 50, 50, 2.0))
-packer.add_item(Item("Cat Tower", 70, 70, 70, 3.0))
-packer.add_item(Item("Console", 50, 50, 50, 10.0))
-packer.add_item(Item("Glass Bottle", 10, 10, 10, 2.0))
-packer.add_item(Item("TV", 70, 70, 70, 30.0))
-packer.add_item(Item("Painting", 50, 50, 50, 10.0))
-packer.add_item(Item("Phone", 10, 10, 10, 2.0))
-packer.add_item(Item("Lego Set", 50, 50, 50, 10.0))
-packer.add_item(Item("Couch", 70, 70, 70, 30.0))
-packer.add_item(Item("Table", 70, 70, 70, 30.0))
-packer.add_item(Item("Microwave", 50, 50, 50, 10.0))
-packer.add_item(Item("Phone", 10, 10, 10, 2.0))
-packer.add_item(Item("Chair", 50, 50, 50, 10.0))
+"
+1) 70.0000, 70.0000, 70.0000
+2) 50.0000, 50.0000, 50.0000
+3) 10.0000, 10.0000, 10.0000
+"
+
+packer.add_item(Item("Letter", 70.0000, 70.0000, 70.0000, 1.0))
+packer.add_item(Item("Bowling Ball", 50.0000, 50.0000, 50.0000 , 100.0))
+packer.add_item(Item("Poster", 50.0000, 50.0000, 50.0000, 2.0))
+packer.add_item(Item("Cat Tower", 70.0000, 70.0000, 70.0000, 3.0))
+packer.add_item(Item("Console", 50.0000, 50.0000, 50.0000, 10.0))
+packer.add_item(Item("Glass Bottle", 10.0000, 10.0000, 10.0000, 2.0))
+packer.add_item(Item("TV", 70.0000, 70.0000, 70.0000, 30.0))
+packer.add_item(Item("Painting", 50.0000, 50.0000, 50.0000, 10.0))
+packer.add_item(Item("Phone", 10.0000, 10.0000, 10.0000, 2.0))
+packer.add_item(Item("Lego Set", 50.0000, 50.0000, 50.0000, 10.0))
+packer.add_item(Item("Couch", 70.0000, 70.0000, 70.0000, 30.0))
+packer.add_item(Item("Table", 70.0000, 70.0000, 70.0000, 30.0))
+packer.add_item(Item("Microwave", 50.0000, 50.0000, 50.0000, 10.0))
+packer.add_item(Item("Tablet", 10.0000, 10.0000, 10.0000, 2.0))
+packer.add_item(Item("Chair", 50.0000, 50.0000, 50.0000, 10.0))
 
 packer.pack()
 
@@ -320,10 +326,9 @@ function deliver_box_in_front!(Robot::robot, model, Storage::storage)
         delivered_box.pos = Storage.pos     # Actualizar la posición
         Robot.carried_box = nothing         # Limpiar el robot
         Robot.capacity = empty              # Marcar el robot como vacío
+        print(find_agent_pos_by_name(delivered_box.name, model))
     end
 end
-
-
 
 # Función auxiliar para verificar si dos posiciones son adyacentes (sin diagonal)
 function is_adjacent(pos1, pos2)
@@ -465,6 +470,15 @@ function find_agent_by_name(name::String, model)
     for agent in allagents(model)
         if isa(agent, Union{box, storage}) && agent.name == name
             return agent
+        end
+    end
+    return nothing # Return nothing if no agent with the given name is found
+end
+
+function find_agent_pos_by_name(name::String, model)
+    for agent in allagents(model)
+        if isa(agent, Union{box, storage}) && agent.name == name
+            return agent.pos
         end
     end
     return nothing # Return nothing if no agent with the given name is found
