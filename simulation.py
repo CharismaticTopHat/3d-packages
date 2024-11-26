@@ -71,6 +71,12 @@ packagesZ = []
 for box in datos["boxes"]:
     packagesX.append(box["pos"][0])
     packagesZ.append(box["pos"][1])
+    
+trailerX = []
+trailerZ = []
+for trailer in datos["storages"]:
+    trailerX.append(trailer["pos"][0])
+    trailerZ.append(trailer["pos"][1])
 
 lifters = {f"l{i}": Lifter(DimBoard, 0.7, textures) for i, _ in enumerate(datos["robots"])}
 packages = {f"p{i}": Package(DimBoard,1,textures,3) for i, _ in enumerate(datos["boxes"])}
@@ -171,9 +177,11 @@ def display():
         
         glPushMatrix()
         glTranslatef(lifter_data["pos"][0], 0, lifter_data["pos"][1])
+        x = lifter_data["pos"][0]
+        z = lifter_data["pos"][1]
         lifter.draw()
         glPopMatrix()
-        print(f"Se dibujó Lifter{i}")
+        print(f"Se dibujó Lifter{i} en la posición [{x},{z}]")
 
     # Se dibujan basuras
     for i, package_data in enumerate(datos["boxes"]):
@@ -181,9 +189,11 @@ def display():
         
         glPushMatrix()
         glTranslatef(package_data["pos"][0], 0, package_data["pos"][1])
+        x = package_data["pos"][0]
+        z = package_data["pos"][1]
         package.draw()
         glPopMatrix()
-        print(f"Se dibujó Package{i}")
+        print(f"Se dibujó Package{i} en la posición [{x},{z}]")
         
     #trailer = Trailer(textures)
     #trailer.draw()

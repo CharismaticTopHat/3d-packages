@@ -17,6 +17,17 @@ packer.add_item(Item("Letter", 70, 70, 70, 1.0))
 packer.add_item(Item("Bowling Ball", 50, 50, 50 , 100.0))
 packer.add_item(Item("Poster", 50, 50, 50, 2.0))
 packer.add_item(Item("Cat Tower", 70, 70, 70, 3.0))
+packer.add_item(Item("Console", 50, 50, 50, 10.0))
+packer.add_item(Item("Glass Bottle", 10, 10, 10, 2.0))
+packer.add_item(Item("TV", 70, 70, 70, 30.0))
+packer.add_item(Item("Painting", 50, 50, 50, 10.0))
+packer.add_item(Item("Phone", 10, 10, 10, 2.0))
+packer.add_item(Item("Lego Set", 50, 50, 50, 10.0))
+packer.add_item(Item("Couch", 70, 70, 70, 30.0))
+packer.add_item(Item("Table", 70, 70, 70, 30.0))
+packer.add_item(Item("Microwave", 50, 50, 50, 10.0))
+packer.add_item(Item("Phone", 10, 10, 10, 2.0))
+packer.add_item(Item("Chair", 50, 50, 50, 10.0))
 
 packer.pack()
 
@@ -169,7 +180,7 @@ function try_move!(agent::robot, model, dx::Int, dy::Int, griddims)
         return true
     else
         # Intentar rutas alternativas
-        println("Robot $(agent.id) encuentra obstáculo en la posición $new_position. Buscando ruta alternativa.")
+        #println("Robot $(agent.id) encuentra obstáculo en la posición $new_position. Buscando ruta alternativa.")
 
         # Generar direcciones alternativas
         alternative_directions = [(1, 0), (-1, 0), (0, 1), (0, -1)]
@@ -181,12 +192,12 @@ function try_move!(agent::robot, model, dx::Int, dy::Int, griddims)
             if valid_position(alt_position, griddims) && !(alt_position in obstacles)
                 move_agent!(agent, alt_position, model)
                 update_orientation_and_counter!(agent, alt_dx, alt_dy)
-                println("Robot $(agent.id) se movió a $alt_position para evitar obstáculos.")
+                #println("Robot $(agent.id) se movió a $alt_position para evitar obstáculos.")
                 return true
             end
         end
 
-        println("Robot $(agent.id) no encontró ruta alternativa y permanece en su lugar.")
+        #println("Robot $(agent.id) no encontró ruta alternativa y permanece en su lugar.")
         return false
     end
 end
@@ -263,10 +274,10 @@ function agent_step!(agent::robot, model, griddims, box_index_ref::Base.RefValue
 
             if !all(dep -> find_agent_by_name(dep, model).status == delivered, agent.carried_box.depends_on)
                 if dist_to_storage <= 8
-                    println("El robot $(agent.id) está dentro del radio de 4 del almacenamiento para la caja $(agent.carried_box.name). Moviéndose temporalmente hacia arriba.")
+                    #println("El robot $(agent.id) está dentro del radio de 4 del almacenamiento para la caja $(agent.carried_box.name). Moviéndose temporalmente hacia arriba.")
                     return  # Detente hasta que las dependencias se cumplan
                 else
-                    println("El robot $(agent.id) sigue trabajando ya que está fuera del radio de espera para la caja $(agent.carried_box.name).")
+                    #println("El robot $(agent.id) sigue trabajando ya que está fuera del radio de espera para la caja $(agent.carried_box.name).")
                 end
             end
         end
@@ -422,16 +433,16 @@ function move_towards!(agent::robot, target_pos, model, griddims)
 
     # Validar el contenido de `path`
     if isempty(path)
-        println("Robot $(agent.id): No se encontró ruta válida hacia $target_pos.")
+        #println("Robot $(agent.id): No se encontró ruta válida hacia $target_pos.")
 
         # Si el destino está en y = 1, buscar otra posición válida en x
         if target_pos[2] == 1
             new_target_pos = find_available_x(1, griddims, model)
             if new_target_pos !== nothing
-                println("Robot $(agent.id): Moviéndose a una nueva posición disponible $new_target_pos en y = 1.")
+                #println("Robot $(agent.id): Moviéndose a una nueva posición disponible $new_target_pos en y = 1.")
                 move_towards!(agent, new_target_pos, model, griddims)
             else
-                println("Robot $(agent.id): No hay posiciones disponibles en y = 1.")
+                #println("Robot $(agent.id): No hay posiciones disponibles en y = 1.")
             end
         end
         return
@@ -484,7 +495,7 @@ function calculate_dependencies!(model, packer)
     end
 end
 
-function initialize_model(; griddims=(300, 600), number=80, packer=packer)
+function initialize_model(; griddims=(30, 30), number=80, packer=packer)
     box_index_ref = Ref(1)  # Índice local para esta simulación
     space = GridSpace(griddims; periodic=false, metric=:manhattan)
     model = ABM(
