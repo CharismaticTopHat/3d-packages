@@ -21,7 +21,7 @@ screen_width = 500
 screen_height = 500
 #vc para el obser.
 FOVY=60.0
-ZNEAR=0.01
+ZNEAR=0.1
 ZFAR=1800.0
 #Variables para definir la posicion del observador
 #gluLookAt(EYE_X,EYE_Y,EYE_Z,CENTER_X,CENTER_Y,CENTER_Z,UP_X,UP_Y,UP_Z)
@@ -74,9 +74,9 @@ for box in datos["boxes"]:
     
 trailerX = []
 trailerZ = []
-for trailer in datos["storages"]:
-    trailerX.append(trailer["pos"][0])
-    trailerZ.append(trailer["pos"][1])
+for trail in datos["storages"]:
+    trailerX.append(trail["pos"][0])
+    trailerZ.append(trail["pos"][1])
 
 lifters = {f"l{i}": Lifter(DimBoard, 0.7, textures) for i, _ in enumerate(datos["robots"])}
 packages = {f"p{i}": Package(DimBoard,1,textures,3) for i, _ in enumerate(datos["boxes"])}
