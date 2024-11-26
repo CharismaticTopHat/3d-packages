@@ -74,9 +74,9 @@ for box in datos["boxes"]:
     
 trailerX = []
 trailerZ = []
-for trailer in datos["storages"]:
-    trailerX.append(trailer["pos"][0])
-    trailerZ.append(trailer["pos"][1])
+for trail in datos["storages"]:
+    trailerX.append(trail["pos"][0])
+    trailerZ.append(trail["pos"][1])
 
 lifters = {f"l{i}": Lifter(DimBoard, 0.7, textures) for i, _ in enumerate(datos["robots"])}
 packages = {f"p{i}": Package(DimBoard,1,textures,3) for i, _ in enumerate(datos["boxes"])}
