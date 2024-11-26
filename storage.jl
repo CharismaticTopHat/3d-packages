@@ -11,23 +11,12 @@ Item = pyimport("py3dbp").Item
 
 packer = Packer()
 
-packer.add_bin(Bin("large-2-box", 320, 200, 220, 70.0))
+packer.add_bin(Bin("large-2-box", 1460, 400, 260, 700.0))
 
-packer.add_item(Item("Letter", 70, 70, 70, 1.0))
-packer.add_item(Item("Bowling Ball", 50, 50, 50 , 100.0))
-packer.add_item(Item("Poster", 50, 50, 50, 2.0))
-packer.add_item(Item("Cat Tower", 70, 70, 70, 3.0))
-packer.add_item(Item("Console", 50, 50, 50, 10.0))
-packer.add_item(Item("Glass Bottle", 10, 10, 10, 2.0))
-packer.add_item(Item("TV", 70, 70, 70, 30.0))
-packer.add_item(Item("Painting", 50, 50, 50, 10.0))
-packer.add_item(Item("Phone", 10, 10, 10, 2.0))
-packer.add_item(Item("Lego Set", 50, 50, 50, 10.0))
-packer.add_item(Item("Couch", 70, 70, 70, 30.0))
-packer.add_item(Item("Table", 70, 70, 70, 30.0))
-packer.add_item(Item("Microwave", 50, 50, 50, 10.0))
-packer.add_item(Item("Phone", 10, 10, 10, 2.0))
-packer.add_item(Item("Chair", 50, 50, 50, 10.0))
+packer.add_item(Item("Letter", 40.9370, 1.9685, 40.9685, 1.0))
+packer.add_item(Item("Bowling Ball", 40.8740, 40.9370, 40.9685, 100.0))
+packer.add_item(Item("Poster", 70.9370, 3.9685, 50.9685, 2.0))
+packer.add_item(Item("Cat Tower", 140.9370, 130.9685, 100.9685, 3.0))
 
 packer.pack()
 
