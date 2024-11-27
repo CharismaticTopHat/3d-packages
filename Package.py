@@ -90,7 +90,7 @@ class Package:
         if self.alive:
             glPushMatrix()
             glTranslatef(self.position[0], self.position[1], self.position[2])
-            glScaled(0.25, 0.25, 0.25)
+            #glScaled(0.25, 0.25, 0.25)
             glColor3f(1.0, 1.0, 1.0)
             glEnable(GL_TEXTURE_2D)
             glBindTexture(GL_TEXTURE_2D, self.textures[self.txtIndex])

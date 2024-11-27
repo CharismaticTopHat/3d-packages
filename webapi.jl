@@ -14,6 +14,8 @@ route("/boxes", method=POST) do
     height = payload["height"]
     depth = payload["depth"]
     weight = payload["weight"]
+    status = payload["status"],
+    finalZ = payload["finalZ"]
 
     # Crear la caja y añadirla a la lista global
     new_box = Dict(
@@ -21,7 +23,9 @@ route("/boxes", method=POST) do
         :width => width,
         :height => height,
         :depth => depth,
-        :weight => weight
+        :weight => weight,
+        :status => status,
+        :finalZ => finalZ
     )
     push!(dynamic_boxes, new_box)
 
@@ -58,7 +62,9 @@ route("/simulations", method=POST) do
             box[:width],
             box[:height],
             box[:depth],
-            box[:weight]
+            box[:weight],
+            box[:status],
+            box[:finalZ]
         ))
     end
 

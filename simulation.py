@@ -17,8 +17,8 @@ from Lifter import Lifter
 from Package import Package
 from Trailer import Trailer
 
-screen_width = 500
-screen_height = 500
+screen_width = 700
+screen_height = 700
 #vc para el obser.
 FOVY=60.0
 ZNEAR=0.1
@@ -196,13 +196,23 @@ def display():
     for i, package_data in enumerate(datos["boxes"]):
         package = packages[f"p{i}"]
         
-        glPushMatrix()
-        glTranslatef(package_data["pos"][0]*4, 0, package_data["pos"][1]*4)
-        x = package_data["pos"][0]*4
-        z = package_data["pos"][1]*4
-        package.draw()
-        glPopMatrix()
-        print(f"Se dibujó Package{i} en la posición [{x},{z}]")
+        if package_data["status"] != "delivered":
+            glPushMatrix()
+            glTranslatef(package_data["pos"][0], 0, package_data["pos"][1])
+            x = package_data["pos"][0]
+            z = package_data["pos"][1]
+            package.draw()
+            glPopMatrix()
+            print(f"Se dibujó Package{i} en la posición [{x},{z}]")
+        else:
+            glPushMatrix()
+            glTranslatef(package_data["pos"][0], package_data["pos"][1], package_data["finalZ"])
+            x = package_data["pos"][0]
+            y = package_data["pos"][1]
+            z = package_data["finalZ"]
+            package.draw()
+            glPopMatrix()
+            print(f"Se dibujó Package{i} en la posición [{x},{y}. {z}]")
         
     trailer = Trailer(textures)
     trailer.draw()
