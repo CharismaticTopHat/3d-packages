@@ -72,8 +72,6 @@ orient_left = 1
 orient_down = 2
 orient_right = 3
 
-global assigned_box_index = 1
-
 @agent struct box(GridAgent{2})
     name::String
     status::BoxStatus = waiting
@@ -83,8 +81,8 @@ global assigned_box_index = 1
     width::Float64 = 0.0
     height::Float64 = 0.0
     depth::Float64 = 0.0
+    truckCoords::Tuple{Float64, Float64} = (0.0, 0.0)
 end
-
 
 @agent struct robot(GridAgent{2}) 
     capacity::RobotStatus = empty
@@ -122,7 +120,6 @@ function does_box_fit(box_name::String, storage_name::String, packer)
     end
     return false
 end
-
 
 function update_orientation_and_counter!(agent::robot, dx::Int, dy::Int)
     new_orientation = agent.orientation
@@ -171,7 +168,6 @@ function valid_position(pos::Tuple{Int, Int}, griddims::Tuple{Int, Int})
     max_x, max_y = griddims
     return x > 0 && x <= max_x && y > 0 && y <= max_y
 end
-
 
 function try_move!(agent::robot, model, dx::Int, dy::Int, griddims)
     current_pos = agent.pos
@@ -254,7 +250,7 @@ function agent_step!(agent::robot, model, griddims, box_index_ref::Base.RefValue
         # Dirígete a la zona de espera (fila superior del grid)
         target_position = (agent.pos[1], 1)  # Fila superior
         move_towards!(agent, target_position, model, griddims)
-
+        
         if agent.pos[2] == 1
             agent.stopped = stop  # Marca al robot como detenido en la zona de espera
         end
@@ -312,37 +308,35 @@ function agent_step!(agent::robot, model, griddims, box_index_ref::Base.RefValue
     end
 end
 
-function all_robots_in_waiting_zone(model)
-    for agent in allagents(model)
-        if isa(agent, robot) && (agent.pos[2] != 1)
-            return false
-        end
-    end
-    return true
-end
-
 # Una única versión para deliver_box_in_front!
 function deliver_box_in_front!(Robot::robot, model, Storage::storage)
     if Robot.carried_box !== nothing
         delivered_box = Robot.carried_box
         push!(Storage.boxes, delivered_box)  # Añadir la caja al almacenamiento
         delivered_box.status = delivered    # Marcar como entregada
-        delivered_box.pos = Storage.pos     # Actualizar la posición
+        delivered_box.pos = delivered_box.truckCoords     # Actualizar la posición
+        println("La caja {}")
         Robot.carried_box = nothing         # Limpiar el robot
         Robot.capacity = empty              # Marcar el robot como vacío
-        print(find_agent_pos_by_name(delivered_box.name, model))
     end
 end
 
-function find_agent_pos_by_name(name::String, model)
-    for agent in allagents(model)
-        if isa(agent, Union{box, storage}) && agent.name == name
-            return agent.pos
+function find_agent_pos_by_name(name::String, model, packer)
+    # Retrieve the corresponding item from the packer bins
+    for bin in packer[:bins]
+        for item in bin[:items]
+            if item[:name] == name
+                # Update the position of the corresponding box agent in the model
+                for agent in allagents(model)
+                    if isa(agent, box) && agent.name == name
+                        agent.pos = (item[:position][:x], item[:position][:y]) # Assuming 2D positions
+                        # No need to return anything here, the position is updated
+                    end
+                end
+            end
         end
     end
-    return nothing # Return nothing if no agent with the given name is found
 end
-
 
 # Función auxiliar para verificar si dos posiciones son adyacentes (sin diagonal)
 function is_adjacent(pos1, pos2)
@@ -514,8 +508,7 @@ function initialize_model(; griddims=(80, 80), number=80, packer=packer)
     box_index_ref = Ref(1)  # Índice local para esta simulación
     space = GridSpace(griddims; periodic = false, metric = :manhattan)
     model = ABM(
-    Union{robot, box, storage},
-    space;
+    Union{robot, box, storage}, space;
     agent_step! = (agent, model) -> agent_step!(agent, model, griddims, box_index_ref),
     scheduler = Schedulers.fastest
     )
@@ -537,6 +530,7 @@ function initialize_model(; griddims=(80, 80), number=80, packer=packer)
         for (i, item) in enumerate(all_items)
             container_name = assigned_boxes[item[:name]]
             pos = shuffled_positions[i % length(shuffled_positions) + 1]
+            item_coords = item[:position]
             add_agent!(box, model;
                 pos = pos,
                 name = item[:name],
@@ -544,7 +538,8 @@ function initialize_model(; griddims=(80, 80), number=80, packer=packer)
                 assigned_storage = container_name,
                 width = item[:width],
                 height = item[:height],
-                depth = item[:depth]
+                depth = item[:depth],
+                truckCoords = (item_coords[1], item_coords[2])
             )
         end
     else
