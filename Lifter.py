@@ -16,9 +16,9 @@ class Lifter:
         self.dim = dim
         # Se inicializa una posicion aleatoria en el tablero
         self.position = [
-            random.randint(-dim, -75),  # Posición en X
-            10,                         # Posición en Y
-            dim-10                      # Posición en Z
+            0,                      # Posición en X
+            10,                     # Posición en Y
+            0                       # Posición en Z
         ]
         #self.position = [0, 6, 0]
         # Inicializar las coordenadas (x,y,z) del cubo en el tablero

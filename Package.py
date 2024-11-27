@@ -15,24 +15,21 @@ import math
 """
 
 class Package:
-    def __init__(self, dim, vel, textures, txtIndex):
+    def __init__(self, dim, vel, textures, txtIndex, length, height, width):
         # Se inicializa las coordenadas de los vertices del cubo
-        self.possibleSizes = [
-                      [10, 10, 10],
-                      [50, 50, 50],
-                      [70, 70, 70]
-                      ]
-        self.size = self.possibleSizes[random.randint(0, len(self.possibleSizes) - 1)]
+        self.length = length
+        self.height = height
+        self.width = width
         self.vertexCoords = [
-                    (0, 1, self.size[2]),
-                    (self.size[0], 1, self.size[2]),
-                    (self.size[0], 1, 0),
-                    (0, 0, 0),
-                    (0, self.size[1], self.size[2]),
-                    (self.size[0], self.size[1], self.size[2]),
-                    (self.size[0], self.size[1], 0),
-                    (0, self.size[1], 0)
-                ]
+            (0, 1, self.width),   
+            (self.length, 1, self.width), 
+            (self.length, 1, 0),  
+            (0, 0, 0),    
+            (0, self.height, self.width),  
+            (self.length, self.height, self.width),
+            (self.length, self.height, 0),
+            (0, self.height, 0),  
+        ]
 
         self.elementArray = [0,1,2,3,0,3,7,4,0,4,5,1,6,2,1,5,6,5,4,7,6,7,3,2,]
 
@@ -95,7 +92,6 @@ class Package:
             glTranslatef(self.position[0], self.position[1], self.position[2])
             glScaled(0.25, 0.25, 0.25)
             glColor3f(1.0, 1.0, 1.0)
-
             glEnable(GL_TEXTURE_2D)
             glBindTexture(GL_TEXTURE_2D, self.textures[self.txtIndex])
 

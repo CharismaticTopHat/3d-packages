@@ -62,7 +62,7 @@ route("/simulations", method=POST) do
         ))
     end
 
-    model = initialize_model(griddims=(80, 80), number=80, packer=packer)
+    model = initialize_model(griddims=(30, 30), number=80, packer=packer)
     id = string(uuid1())  # Crea un identificador único para la instancia de modelo
     instances[id] = model  # Almacena el modelo en el diccionario
 

@@ -68,10 +68,19 @@ for lifter in datos["robots"]:
 
 packagesX = []
 packagesZ = []
+packagesHeight = []
+packagesWidth = []
+packagesDepth = []
+#packageStatus = []
 for box in datos["boxes"]:
     packagesX.append(box["pos"][0])
     packagesZ.append(box["pos"][1])
-    
+    packagesWidth.append(box["width"])
+    packagesHeight.append(box["height"])
+    packagesDepth.append(box["depth"])
+    #packageStatus.append(box["BoxStatus"])
+
+
 trailerX = []
 trailerZ = []
 for trail in datos["storages"]:
@@ -79,7 +88,7 @@ for trail in datos["storages"]:
     trailerZ.append(trail["pos"][1])
 
 lifters = {f"l{i}": Lifter(DimBoard, 0.7, textures) for i, _ in enumerate(datos["robots"])}
-packages = {f"p{i}": Package(DimBoard,1,textures,3) for i, _ in enumerate(datos["boxes"])}
+packages = {f"p{i}": Package(DimBoard,1,textures,3, packagesWidth[i], packagesHeight[i], packagesDepth[i]) for i, _ in enumerate(datos["boxes"])}
 
 pygame.init()
 
@@ -176,24 +185,24 @@ def display():
         lifter = lifters[f"l{i}"]
         
         glPushMatrix()
-        glTranslatef(lifter_data["pos"][0], 0, lifter_data["pos"][1])
+        glTranslatef(-lifter_data["pos"][0], 0, -lifter_data["pos"][1])
         x = lifter_data["pos"][0]
         z = lifter_data["pos"][1]
         lifter.draw()
         glPopMatrix()
         print(f"Se dibujó Lifter{i} en la posición [{x},{z}]")
 
-    # Se dibujan basuras
+    # Se dibujan los Paquetes
     for i, package_data in enumerate(datos["boxes"]):
         package = packages[f"p{i}"]
         
         glPushMatrix()
-        glTranslatef(package_data["pos"][0], 0, package_data["pos"][1])
-        x = package_data["pos"][0]
-        z = package_data["pos"][1]
+        glTranslatef(package_data["pos"][0]*4, 0, package_data["pos"][1]*4)
+        x = package_data["pos"][0]*4
+        z = package_data["pos"][1]*4
         package.draw()
         glPopMatrix()
-        #print(f"Se dibujó Package{i} en la posición [{x},{z}]")
+        print(f"Se dibujó Package{i} en la posición [{x},{z}]")
         
     #trailer = Trailer(textures)
     #trailer.draw()
@@ -353,20 +362,20 @@ while not done:
         if theta > 359.0:
             theta = 0
         else:
-            theta += 1.0
+            theta += 10.0
         lookAt()
     if keys[pygame.K_LEFT]:
         if theta < 1.0:
             theta = 360.0
         else:
-            theta -= 1.0
+            theta -= 10.0
         lookAt()
     if keys[pygame.K_UP]:
-        EYE_Y += 1.0
+        EYE_Y += 10.0
         lookAt()
     
     if keys[pygame.K_DOWN]:
-        EYE_Y -= 1.0
+        EYE_Y -= 10.0
         lookAt()
 
     for event in pygame.event.get():
@@ -379,5 +388,5 @@ while not done:
 
     display()
     pygame.display.flip()
-    pygame.time.wait(10)
+    pygame.time.wait(100)
 pygame.quit()
