@@ -198,7 +198,7 @@ def display():
         
         if package_data["status"] != "delivered":
             glPushMatrix()
-            glTranslatef(package_data["pos"][0], 0, package_data["pos"][1])
+            glTranslatef(-package_data["pos"][0]-100, 0, -package_data["pos"][1]-100)
             x = package_data["pos"][0]
             z = package_data["pos"][1]
             package.draw()
@@ -375,20 +375,20 @@ while not done:
         if theta > 359.0:
             theta = 0
         else:
-            theta += 10.0
+            theta += 1.0
         lookAt()
     if keys[pygame.K_LEFT]:
         if theta < 1.0:
             theta = 360.0
         else:
-            theta -= 10.0
+            theta -= 1.0
         lookAt()
     if keys[pygame.K_UP]:
-        EYE_Y += 10.0
+        EYE_Y += 1.0
         lookAt()
     
     if keys[pygame.K_DOWN]:
-        EYE_Y -= 10.0
+        EYE_Y -= 1.0
         lookAt()
 
     for event in pygame.event.get():

@@ -505,7 +505,7 @@ function calculate_dependencies!(model, packer)
     end
 end
 
-function initialize_model(; griddims=(30, 30), number=80, packer=packer)
+function initialize_model(; griddims=(150, 150), number=80, packer=packer)
     box_index_ref = Ref(1)  # Índice local para esta simulación
     space = GridSpace(griddims; periodic = false, metric = :manhattan)
     model = ABM(
