@@ -11,12 +11,23 @@ Item = pyimport("py3dbp").Item
 
 packer = Packer()
 
-packer.add_bin(Bin("large-2-box", 1460, 400, 260, 700.0))
+packer.add_bin(Bin("large-2-box", 320, 200, 220, 3200.0))
 
-packer.add_item(Item("Letter", 40.9370, 1.9685, 40.9685, 1.0))
-packer.add_item(Item("Bowling Ball", 40.8740, 40.9370, 40.9685, 100.0))
-packer.add_item(Item("Poster", 70.9370, 3.9685, 50.9685, 2.0))
-packer.add_item(Item("Cat Tower", 140.9370, 130.9685, 100.9685, 3.0))
+packer.add_item(Item("Letter", 70.0000, 70.0000, 70.0000, 1.0))
+packer.add_item(Item("Bowling Ball", 50.0000, 50.0000, 50.0000 , 100.0))
+packer.add_item(Item("Poster", 50.0000, 50.0000, 50.0000, 2.0))
+packer.add_item(Item("Cat Tower", 70.0000, 70.0000, 70.0000, 3.0))
+packer.add_item(Item("Console", 50.0000, 50.0000, 50.0000, 10.0))
+packer.add_item(Item("Glass Bottle", 10.0000, 10.0000, 10.0000, 2.0))
+packer.add_item(Item("TV", 70.0000, 70.0000, 70.0000, 30.0))
+packer.add_item(Item("Painting", 50.0000, 50.0000, 50.0000, 10.0))
+packer.add_item(Item("Phone", 10.0000, 10.0000, 10.0000, 2.0))
+packer.add_item(Item("Lego Set", 50.0000, 50.0000, 50.0000, 10.0))
+packer.add_item(Item("Couch", 70.0000, 70.0000, 70.0000, 30.0))
+packer.add_item(Item("Table", 70.0000, 70.0000, 70.0000, 30.0))
+packer.add_item(Item("Microwave", 50.0000, 50.0000, 50.0000, 10.0))
+packer.add_item(Item("Tablet", 10.0000, 10.0000, 10.0000, 2.0))
+packer.add_item(Item("Chair", 50.0000, 50.0000, 50.0000, 10.0))
 
 packer.pack()
 
@@ -319,9 +330,18 @@ function deliver_box_in_front!(Robot::robot, model, Storage::storage)
         delivered_box.pos = Storage.pos     # Actualizar la posición
         Robot.carried_box = nothing         # Limpiar el robot
         Robot.capacity = empty              # Marcar el robot como vacío
+        print(find_agent_pos_by_name(delivered_box.name, model))
     end
 end
 
+function find_agent_pos_by_name(name::String, model)
+    for agent in allagents(model)
+        if isa(agent, Union{box, storage}) && agent.name == name
+            return agent.pos
+        end
+    end
+    return nothing # Return nothing if no agent with the given name is found
+end
 
 
 # Función auxiliar para verificar si dos posiciones son adyacentes (sin diagonal)

@@ -193,7 +193,7 @@ def display():
         z = package_data["pos"][1]
         package.draw()
         glPopMatrix()
-        print(f"Se dibujó Package{i} en la posición [{x},{z}]")
+        #print(f"Se dibujó Package{i} en la posición [{x},{z}]")
         
     #trailer = Trailer(textures)
     #trailer.draw()
