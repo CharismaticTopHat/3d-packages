@@ -48,7 +48,7 @@ DimBoard = 300
 theta = 0.0
 radius = 300
 
-trailer = []
+#trailer = []
 
 # Arreglo para el manejo de texturas
 textures = []
@@ -149,8 +149,8 @@ def Init():
     for i in filenames:
         Texturas(i)
         
-    trailer.append(OBJ("truck.obj", swapyz=True))
-    trailer[0].generate()
+    #trailer.append(OBJ("truck.obj", swapyz=True))
+    #trailer[0].generate()
         
 def planoText():
     # activate textures
@@ -204,8 +204,8 @@ def display():
         glPopMatrix()
         print(f"Se dibujó Package{i} en la posición [{x},{z}]")
         
-    #trailer = Trailer(textures)
-    #trailer.draw()
+    trailer = Trailer(textures)
+    trailer.draw()
 
     # Área de Montacargas
     '''
@@ -337,6 +337,7 @@ def display():
     glEnd()
     glDisable(GL_TEXTURE_2D)
     
+    '''
     glPushMatrix()  
     #correcciones para dibujar el objeto en plano XZ
     #esto depende de cada objeto
@@ -346,6 +347,7 @@ def display():
     glScalef(50.0,50.0,50.0)
     trailer[0].render()  
     glPopMatrix()
+    '''
     
 def lookAt():
     glLoadIdentity()

@@ -12,9 +12,9 @@ import math
 
 class Trailer:
     def __init__(self, textures):
-        self.length = 320
-        self.height = 201
-        self.width = 200
+        self.length = 80
+        self.height = 50
+        self.width = 55
         self.points = [
             (0, 1, self.width),   
             (self.length, 1, self.width), 
@@ -68,6 +68,8 @@ class Trailer:
         glBindTexture(GL_TEXTURE_2D, self.textures[5])  # Vincular la textura deseada
 
         glBegin(GL_QUADS)
+        
+
 
         # Cara inferior
         glTexCoord2f(0.0, 0.0)
@@ -98,6 +100,7 @@ class Trailer:
         glVertex3d(*self.points[2])
         glTexCoord2f(0.0, 1.0)
         glVertex3d(*self.points[1])
+        
 
         glEnd()
 
@@ -107,8 +110,8 @@ class Trailer:
         glEnable(GL_TEXTURE_2D)  # Activar las texturas
         glBindTexture(GL_TEXTURE_2D, self.textures[5])
         glPushMatrix()
-        glTranslatef(self.length+16, 25, 13.5)
-        glScaled(15.5, 15.5, 15.5)
+        glTranslatef(self.length+16, 18, self.width / 2)
+        glScaled(12, 12, 12)
         glColor3f(1.0, 0.1, 0.0) 
         head = Cubo(self.textures, 0)
         head.draw()
