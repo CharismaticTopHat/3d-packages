@@ -15,17 +15,24 @@ class Trailer:
         self.length = 80
         self.height = 50
         self.width = 55
+        x_start = -75
+        x_end = -75+self.length
+        z_start = -299
+        z_end = -299 + self.width
+
+        # Adjust the points
         self.points = [
-            (0, 1, self.width),   
-            (self.length, 1, self.width), 
-            (self.length, 1, 0),  
-            (0, 0, 0),    
-            (0, self.height, self.width),  
-            (self.length, self.height, self.width),
-            (self.length, self.height, 0),
-            (0, self.height, 0),  
+            (x_start, 1, z_end),            
+            (x_end, 1, z_end),   
+            (x_end, 1, z_start), 
+            (x_start, 0, z_start),         
+            (x_start, self.height, z_end),   
+            (x_end, self.height, z_end),  
+            (x_end, self.height, z_start),  
+            (x_start, self.height, z_start),  
         ]
-        self.faces = [
+        
+        faces = [
             # Cara inferior
             [self.points[3], self.points[2], self.points[1], self.points[0]],
             # Cara superior
@@ -68,8 +75,6 @@ class Trailer:
         glBindTexture(GL_TEXTURE_2D, self.textures[5])  # Vincular la textura deseada
 
         glBegin(GL_QUADS)
-        
-
 
         # Cara inferior
         glTexCoord2f(0.0, 0.0)
@@ -100,7 +105,6 @@ class Trailer:
         glVertex3d(*self.points[2])
         glTexCoord2f(0.0, 1.0)
         glVertex3d(*self.points[1])
-        
 
         glEnd()
 
@@ -110,8 +114,8 @@ class Trailer:
         glEnable(GL_TEXTURE_2D)  # Activar las texturas
         glBindTexture(GL_TEXTURE_2D, self.textures[5])
         glPushMatrix()
-        glTranslatef(self.length+16, 18, self.width / 2)
-        glScaled(12, 12, 12)
+        glTranslatef(-75+self.length+16, 25, -260)
+        glScaled(15.5, 15.5, 15.5)
         glColor3f(1.0, 0.1, 0.0) 
         head = Cubo(self.textures, 0)
         head.draw()
@@ -122,10 +126,10 @@ class Trailer:
         glEnable(GL_TEXTURE_2D)
         glBindTexture(GL_TEXTURE_2D, self.textures[1])
         wheel_positions = [
-            (0, 0, self.width+3),            
-            (self.length+3, 0, self.width+3),   
-            (self.length+3, 0, 0),           
-            (0, 0, 0),                   
+            (-75, 0, -300+self.width+3),            
+            (-75+self.length+3, 0, -300+self.width+3),   
+            (-75+self.length+3, 0, -299),           
+            (-75, 0, -299),                   
         ]
         for pos in wheel_positions:
             glPushMatrix()

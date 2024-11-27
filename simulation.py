@@ -185,7 +185,7 @@ def display():
         lifter = lifters[f"l{i}"]
         
         glPushMatrix()
-        glTranslatef(-lifter_data["pos"][0], 0, -lifter_data["pos"][1])
+        glTranslatef(-lifter_data["pos"][0]-100, 0, -lifter_data["pos"][1]-100)
         x = lifter_data["pos"][0]
         z = lifter_data["pos"][1]
         lifter.draw()
@@ -206,7 +206,7 @@ def display():
             print(f"Se dibujó Package{i} en la posición [{x},{z}]")
         else:
             glPushMatrix()
-            glTranslatef(package_data["pos"][0] / 4, package_data["pos"][1] / 4, package_data["finalZ"] / 4)
+            glTranslatef((package_data["pos"][0] / 4)-75, package_data["pos"][1] / 4, (package_data["finalZ"] / 4)-299)
             x = package_data["pos"][0]
             y = package_data["pos"][1]
             z = package_data["finalZ"]
@@ -214,7 +214,7 @@ def display():
             package.draw()
             glPopMatrix()
             print(f"Se dibujó Package{i} {name} en la posición [{x},{y}, {z}]")
-        
+    
     trailer = Trailer(textures)
     trailer.draw()
 
@@ -375,20 +375,20 @@ while not done:
         if theta > 359.0:
             theta = 0
         else:
-            theta += 1.0
+            theta += 3.0
         lookAt()
     if keys[pygame.K_LEFT]:
         if theta < 1.0:
             theta = 360.0
         else:
-            theta -= 1.0
+            theta -= 3.0
         lookAt()
     if keys[pygame.K_UP]:
-        EYE_Y += 1.0
+        EYE_Y += 3.0
         lookAt()
     
     if keys[pygame.K_DOWN]:
-        EYE_Y -= 1.0
+        EYE_Y -= 3.0
         lookAt()
 
     for event in pygame.event.get():

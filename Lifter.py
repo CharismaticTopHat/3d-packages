@@ -17,7 +17,7 @@ class Lifter:
         # Se inicializa una posicion aleatoria en el tablero
         self.position = [
             0,                      # Posición en X
-            10,                     # Posición en Y
+            12,                     # Posición en Y
             0                       # Posición en Z
         ]
         #self.position = [0, 6, 0]
