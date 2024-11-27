@@ -82,6 +82,7 @@ orient_right = 3
     height::Float64 = 0.0
     depth::Float64 = 0.0
     truckCoords::Tuple{Float64, Float64} = (0.0, 0.0)
+    finalZ::Float64 = 0.0
 end
 
 @agent struct robot(GridAgent{2}) 
@@ -504,7 +505,7 @@ function calculate_dependencies!(model, packer)
     end
 end
 
-function initialize_model(; griddims=(80, 80), number=80, packer=packer)
+function initialize_model(; griddims=(30, 30), number=80, packer=packer)
     box_index_ref = Ref(1)  # Índice local para esta simulación
     space = GridSpace(griddims; periodic = false, metric = :manhattan)
     model = ABM(
@@ -539,7 +540,8 @@ function initialize_model(; griddims=(80, 80), number=80, packer=packer)
                 width = item[:width],
                 height = item[:height],
                 depth = item[:depth],
-                truckCoords = (item_coords[1], item_coords[2])
+                truckCoords = (item_coords[1], item_coords[2]),
+                finalZ = item_coords[3]
             )
         end
     else
