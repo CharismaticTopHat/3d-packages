@@ -38,9 +38,9 @@ class Package:
         self.dim = dim
         # Se inicializa una posicion aleatoria en el tablero
         self.position = [
-            random.randint(-dim, -75),  # Posición en X
+            0,  # Posición en X
             3,                          # Posición en Y
-            random.randint(-dim, -dim+(dim-75))   # Posición en Z
+            0   # Posición en Z
         ]
         # Inicializar las coordenadas (x,y,z) del cubo en el tablero
         # almacenandolas en el vector position
