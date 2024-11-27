@@ -206,7 +206,7 @@ def display():
             print(f"Se dibujó Package{i} en la posición [{x},{z}]")
         else:
             glPushMatrix()
-            glTranslatef(package_data["pos"][0], package_data["pos"][1], package_data["finalZ"])
+            glTranslatef(package_data["pos"][0] / 4, package_data["pos"][1] / 4, package_data["finalZ"] / 4)
             x = package_data["pos"][0]
             y = package_data["pos"][1]
             z = package_data["finalZ"]

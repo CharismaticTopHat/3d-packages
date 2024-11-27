@@ -39,7 +39,7 @@ class Package:
         # Se inicializa una posicion aleatoria en el tablero
         self.position = [
             0,  # Posición en X
-            3,                          # Posición en Y
+            1,                          # Posición en Y
             0   # Posición en Z
         ]
         # Inicializar las coordenadas (x,y,z) del cubo en el tablero
@@ -90,7 +90,7 @@ class Package:
         if self.alive:
             glPushMatrix()
             glTranslatef(self.position[0], self.position[1], self.position[2])
-            #glScaled(0.25, 0.25, 0.25)
+            glScaled(0.25, 0.25, 0.25)
             glColor3f(1.0, 1.0, 1.0)
             glEnable(GL_TEXTURE_2D)
             glBindTexture(GL_TEXTURE_2D, self.textures[self.txtIndex])
