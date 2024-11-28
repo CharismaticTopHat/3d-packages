@@ -195,16 +195,24 @@ def display():
     # Se dibujan los Paquetes
     for i, package_data in enumerate(datos["boxes"]):
         package = packages[f"p{i}"]
-        
-        if package_data["status"] != "delivered":
+
+        if package_data["status"] == "waiting":
             glPushMatrix()
             glTranslatef(-package_data["pos"][0]-100, 0, (-package_data["pos"][1])*2)
-            x = package_data["pos"][0]
-            z = package_data["pos"][1]
+            #x = package_data["pos"][0]
+            #z = package_data["pos"][1]
             package.draw()
             glPopMatrix()
-            print(f"Se dibujó Package{i} en la posición [{x},{z}]")
-        else:
+            #print(f"Se dibujó Package{i} en la posición [{x},{z}]")
+        elif package_data["status"] == "taken":
+            glPushMatrix()
+            glTranslatef(-package_data["pos"][0]-92, 0, (-package_data["pos"][1])*2)
+            #x = package_data["pos"][0]
+            #z = package_data["pos"][1]
+            package.draw()
+            glPopMatrix()
+            #print(f"Se dibujó Package{i} en la posición [{x},{z}]")
+        elif package_data["status"] == "delivered":
             glPushMatrix()
             glTranslatef((package_data["pos"][0] / 4)-75, package_data["pos"][1] / 4, (package_data["finalZ"] / 4)-299)
             x = package_data["pos"][0]
@@ -213,7 +221,7 @@ def display():
             name = package_data["name"]
             package.draw()
             glPopMatrix()
-            print(f"Se dibujó Package{i} {name} en la posición [{x},{y}, {z}]")
+            #print(f"Se dibujó Package{i} {name} en la posición [{x},{y}, {z}]")
     
     trailer = Trailer(textures)
     trailer.draw()
