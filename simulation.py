@@ -185,7 +185,7 @@ def display():
         lifter = lifters[f"l{i}"]
         
         glPushMatrix()
-        glTranslatef(-lifter_data["pos"][0]-100, 0, -lifter_data["pos"][1]-100)
+        glTranslatef(-lifter_data["pos"][0]-100, 0, (-lifter_data["pos"][1])*2)
         x = lifter_data["pos"][0]
         z = lifter_data["pos"][1]
         lifter.draw()
@@ -198,7 +198,7 @@ def display():
         
         if package_data["status"] != "delivered":
             glPushMatrix()
-            glTranslatef(-package_data["pos"][0]-100, 0, -package_data["pos"][1]-100)
+            glTranslatef(-package_data["pos"][0]-100, 0, (-package_data["pos"][1])*2)
             x = package_data["pos"][0]
             z = package_data["pos"][1]
             package.draw()
@@ -401,5 +401,5 @@ while not done:
 
     display()
     pygame.display.flip()
-    pygame.time.wait(100)
+    pygame.time.wait(10)
 pygame.quit()
