@@ -183,14 +183,28 @@ def display():
     # Se dibujan los Montacargas
     for i, lifter_data in enumerate(datos["robots"]):
         lifter = lifters[f"l{i}"]
+
+        lifter.update()
         
-        glPushMatrix()
-        glTranslatef(-lifter_data["pos"][0]-100, 0, (-lifter_data["pos"][1])*2)
-        x = lifter_data["pos"][0]
-        z = lifter_data["pos"][1]
-        lifter.draw()
-        glPopMatrix()
-        print(f"Se dibujó Lifter{i} en la posición [{x},{z}]")
+        if lifter_data["capacity"] == "empty":
+            glPushMatrix()
+            glTranslatef(-lifter_data["pos"][0]-100, 0, (-lifter_data["pos"][1])*2)
+            x = lifter_data["pos"][0]
+            z = lifter_data["pos"][1]
+            lifter.draw()
+            lifter.setStatus("waiting")
+            glPopMatrix()
+            #print(f"Se dibujó Lifter{i} en la posición [{x},{z}]")
+        else:
+            glPushMatrix()
+            glTranslatef(-lifter_data["pos"][0]-100, 0, (-lifter_data["pos"][1])*2)
+            x = lifter_data["pos"][0]
+            z = lifter_data["pos"][1]
+            lifter.draw()
+            lifter.setStatus("full")
+            glPopMatrix()
+            #print(f"Se dibujó Lifter{i} en la posición [{x},{z}]")
+            print(lifter.status)
 
     # Se dibujan los Paquetes
     for i, package_data in enumerate(datos["boxes"]):

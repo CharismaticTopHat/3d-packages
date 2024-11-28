@@ -31,6 +31,8 @@ class Lifter:
         self.Direction = [(dirX / magnitude), 0, (dirZ / magnitude)]
         self.angle = 0
         self.vel = vel
+        self.status = "waiting"
+        self.previous_status = "waiting"
         # El vector aleatorio debe de estar sobre el plano XZ (la altura en Y debe ser fija)
         # Se normaliza el vector de direccion
 
@@ -46,7 +48,6 @@ class Lifter:
         self.radiusCol = 5
 
         #Control variables for animations
-        self.status = 0
         self.trashID = -1
         #0 = searching
         #1 = lifting
@@ -73,7 +74,24 @@ class Lifter:
         self.position[2] = posZ
     
     def update(self):
-        pass
+
+        delta = 1.0
+        # Movement rules
+        if self.previous_status == "waiting" and self.status == "full":
+            if self.platformHeight < 0:
+                self.platformHeight += delta
+        elif self.previous_status == "full" and self.status == "waiting":
+            if self.platformHeight > -1.5:
+                self.platformHeight -= delta
+                
+        if self.status != self.previous_status:
+            print(f"Status changed from {self.previous_status} to {self.status}")
+            self.previous_status = self.status
+        
+        print(self.platformHeight)
+                
+    def setStatus(self, status):
+        self.status = status
 
     def draw(self):
         glPushMatrix()
@@ -181,8 +199,8 @@ class Lifter:
 
         # Lifter
         glPushMatrix()
-        if self.status == 1 or self.status == 2 or self.status == 3:
-            self.drawTrash()
+        #if self.status == "waiting" or self.status == "full":
+        #    self.drawTrash()
         glColor3f(0.0, 0.0, 0.0)
         glTranslatef(0, self.platformHeight, 0)  # Up and down
         glBegin(GL_QUADS)
@@ -198,6 +216,7 @@ class Lifter:
         glPopMatrix()
         glPopMatrix()
 
+    '''
     def drawTrash(self):
         glPushMatrix()
         glTranslatef(2, (self.platformHeight + 1.5), 0)
@@ -273,3 +292,4 @@ class Lifter:
         glDisable(GL_TEXTURE_2D)
 
         glPopMatrix()
+        '''
