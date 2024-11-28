@@ -184,7 +184,6 @@ def display():
     for i, lifter_data in enumerate(datos["robots"]):
         lifter = lifters[f"l{i}"]
 
-        lifter.update()
         
         if lifter_data["capacity"] == "empty":
             glPushMatrix()
@@ -192,6 +191,7 @@ def display():
             x = lifter_data["pos"][0]
             z = lifter_data["pos"][1]
             lifter.draw()
+            lifter.update()
             lifter.setStatus("waiting")
             glPopMatrix()
             #print(f"Se dibujó Lifter{i} en la posición [{x},{z}]")
@@ -201,6 +201,7 @@ def display():
             x = lifter_data["pos"][0]
             z = lifter_data["pos"][1]
             lifter.draw()
+            lifter.update()
             lifter.setStatus("full")
             glPopMatrix()
             #print(f"Se dibujó Lifter{i} en la posición [{x},{z}]")
@@ -220,7 +221,7 @@ def display():
             #print(f"Se dibujó Package{i} en la posición [{x},{z}]")
         elif package_data["status"] == "taken":
             glPushMatrix()
-            glTranslatef(-package_data["pos"][0]-92, 0, (-package_data["pos"][1])*2)
+            glTranslatef(-package_data["pos"][0]-92, lifter.platformHeight + 20, (-package_data["pos"][1])*2)
             #x = package_data["pos"][0]
             #z = package_data["pos"][1]
             package.draw()
