@@ -38,7 +38,7 @@ class Trailer:
             # Cara superior
             [self.points[4], self.points[5], self.points[6], self.points[7]],
             # Cara frontal
-            #[self.points[7], self.points[6], self.points[2], self.points[3]],
+            [self.points[7], self.points[6], self.points[2], self.points[3]],
             # Cara trasera
             #[self.points[4], self.points[5], self.points[1], self.points[0]],
             # Cara izquierda
@@ -105,6 +105,16 @@ class Trailer:
         glVertex3d(*self.points[2])
         glTexCoord2f(0.0, 1.0)
         glVertex3d(*self.points[1])
+        
+        # Cara frontal
+        glTexCoord2f(0.0, 0.0)
+        glVertex3d(*self.points[7])
+        glTexCoord2f(1.0, 0.0)
+        glVertex3d(*self.points[6])
+        glTexCoord2f(1.0, 1.0)
+        glVertex3d(*self.points[2])
+        glTexCoord2f(0.0, 1.0)
+        glVertex3d(*self.points[3])
 
         glEnd()
 

@@ -221,7 +221,7 @@ def display():
             #print(f"Se dibujó Package{i} en la posición [{x},{z}]")
         elif package_data["status"] == "taken":
             glPushMatrix()
-            glTranslatef(-package_data["pos"][0]-92, lifter.platformHeight + 20, (-package_data["pos"][1])*2)
+            glTranslatef(-package_data["pos"][0]-92, lifter.platformHeight + 15, (-package_data["pos"][1])*2)
             #x = package_data["pos"][0]
             #z = package_data["pos"][1]
             package.draw()
@@ -264,12 +264,14 @@ def display():
     glTexCoord2f(1.0, 0.0) 
     glVertex3d(-75, 2, -DimBoard)
     glTexCoord2f(1.0, 1.0) 
-    glVertex3d(-75, 2, -DimBoard + (DimBoard - 75))
+    glVertex3d(-75, 2, 0)
     glTexCoord2f(0.0, 1.0) 
-    glVertex3d(-DimBoard, 2, -DimBoard + (DimBoard - 75))
+    glVertex3d(-DimBoard, 2, 0)
     glEnd()
+    glDisable(GL_TEXTURE_2D)
 
     #Área de Ruta
+    '''
     glEnable(GL_TEXTURE_2D)  # Activar las texturas
     glBindTexture(GL_TEXTURE_2D, textures[7])
     glBegin(GL_QUADS)
@@ -288,18 +290,20 @@ def display():
     glVertex3d(0, 1, 0)    
     glEnd()
     glDisable(GL_TEXTURE_2D)
+    '''
 
 
     # Dibujar Plano Inferior
+    glEnable(GL_TEXTURE_2D)  # Activar las texturas
+    glBindTexture(GL_TEXTURE_2D, textures[7])
     planoText()
-    glColor3f(0.3, 0.3, 0.3)
     glBegin(GL_QUADS)
     glVertex3d(-DimBoard, -1, -DimBoard)
     glVertex3d(-DimBoard, -1, DimBoard)
     glVertex3d(DimBoard, -1, DimBoard)
     glVertex3d(DimBoard, -1, -DimBoard)
     glEnd()
-    
+    glDisable(GL_TEXTURE_2D)    
     wall_height = 200.0  # Altura de Paredes
     
     #Dibujar Plano Superior

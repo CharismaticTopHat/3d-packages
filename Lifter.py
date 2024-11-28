@@ -75,15 +75,15 @@ class Lifter:
     
     def update(self):
 
-        delta = 1.5
+        delta = 0.75
         # Movement rules
         if self.previous_status == "waiting" and self.status == "full":
-            if self.platformHeight < 0:
+            if self.platformHeight <= 0:
                 self.platformHeight += delta
                 self.draw()
                 
         elif self.previous_status == "full" and self.status == "waiting":
-            if self.platformHeight > -1.5:
+            if self.platformHeight >= -1.5:
                 self.platformHeight -= delta
                 self.draw()
                 
